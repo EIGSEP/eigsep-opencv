@@ -11,10 +11,13 @@ class CameraThread(threading.Thread):
         self.ret = False
         self.frame = None
         self.running = True
+        self.frame_ready = threading.Event()
 
     def run(self):
         while self.running:
             self.ret, self.frame = self.cap.read()
+            if self.ret:
+                self.frame_ready.set()
             time.sleep(0.01)  # Small delay to reduce CPU usage
 
     def stop(self):
@@ -26,13 +29,16 @@ def main():
     camera_thread = CameraThread()
     camera_thread.start()
 
+    # Wait until the first frame is captured
+    camera_thread.frame_ready.wait()
+
     print("Creating AprilTag detector...")
     options = apriltag.DetectorOptions(families="tag36h11")
     detector = apriltag.Detector(options)
 
     print("Starting video capture...")
     last_print_time = time.time()
-    print_delay = 0.5  # Delay in seconds between prints
+    print_delay = 2  # Delay in seconds between prints
 
     try:
         while True:
