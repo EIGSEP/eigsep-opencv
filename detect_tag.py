@@ -3,6 +3,7 @@ import numpy
 import cv2
 import yaml
 import argparse
+import sys
 
 from importlib import import_module
 from dt_apriltags import Detector
