@@ -26,12 +26,12 @@ def main():
         for detection in detections:
             # Draw the bounding box
             for i in range(4):
-                pt1 = tuple(detection.corners[i])
-                pt2 = tuple(detection.corners[(i + 1) % 4])
+                pt1 = (int(detection.corners[i][0]), int(detection.corners[i][1]))
+                pt2 = (int(detection.corners[(i + 1) % 4][0]), int(detection.corners[(i + 1) % 4][1]))
                 cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
 
             # Draw the center
-            center = tuple(map(int, detection.center))
+            center = (int(detection.center[0]), int(detection.center[1]))
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
             # Display the tag ID
