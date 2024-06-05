@@ -6,9 +6,9 @@ import threading
 import os
 import shutil
 
-# Directory to save images
-SAVE_DIR = "saved_images"
-os.makedirs(SAVE_DIR, exist_ok=True)
+# Base directory to save images
+BASE_SAVE_DIR = "saved_images"
+os.makedirs(BASE_SAVE_DIR, exist_ok=True)
 
 class CameraThread(threading.Thread):
     def __init__(self, camera_index=0):
@@ -30,6 +30,15 @@ class CameraThread(threading.Thread):
         self.running = False
         self.cap.release()
 
+def get_next_run_number():
+    # Determine the next run number by counting existing subdirectories in BASE_SAVE_DIR
+    subdirs = [d for d in os.listdir(BASE_SAVE_DIR) if os.path.isdir(os.path.join(BASE_SAVE_DIR, d))]
+    run_numbers = [int(d.split('_')[0][3:]) for d in subdirs if d.startswith('run')]
+    if run_numbers:
+        return max(run_numbers) + 1
+    else:
+        return 1
+
 def main():
     print("Initializing camera...")
     camera_thread = CameraThread()
@@ -41,6 +50,12 @@ def main():
     print("Creating AprilTag detector...")
     options = apriltag.DetectorOptions(families="tag36h11")
     detector = apriltag.Detector(options)
+
+    # Create a subdirectory for this run
+    run_number = get_next_run_number()
+    run_timestamp = time.strftime("%Y%m%d-%H%M%S")
+    run_dir = os.path.join(BASE_SAVE_DIR, f'run{run_number}_{run_timestamp}')
+    os.makedirs(run_dir)
 
     print("Starting video capture...")
     last_print_time = time.time()
@@ -88,8 +103,7 @@ def main():
                         print(f"Error processing detection: {e}")
 
                 # Save the frame with detections to a file
-                timestamp = time.strftime("%Y%m%d-%H%M%S")
-                image_path = os.path.join(SAVE_DIR, f'apriltag_detection_{timestamp}_{image_count}.png')
+                image_path = os.path.join(run_dir, f'apriltag_detection_{image_count}.png')
                 cv2.imwrite(image_path, frame)
                 saved_images.append(image_path)
                 print(f"Saved image: {image_path}")
@@ -108,11 +122,10 @@ def main():
             user_input = input("Do you want to keep the saved images? (y/n): ").strip().lower()
             if user_input == 'n':
                 print("Deleting saved images...")
-                for image_path in saved_images:
-                    os.remove(image_path)
+                shutil.rmtree(run_dir)
                 print("Images deleted.")
             else:
-                print("Images kept.")
+                print(f"Images kept in {run_dir}")
 
 if __name__ == "__main__":
     main()
