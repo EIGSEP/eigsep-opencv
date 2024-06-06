@@ -3,6 +3,7 @@ import time
 import cv2
 import shutil
 import argparse
+import numpy as np
 from camera_thread import CameraThread
 from apriltag_detector import AprilTagDetector
 from box_position import BoxPosition
@@ -21,12 +22,21 @@ def get_next_run_number():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="AprilTag Box Position Detection")
-    parser.add_argument("--live", action="store_true", help="Show live video feed")
-    parser.add_argument("--save", action="store_true", help="Save images with detections")
+    parser.add_argument("-l", "--live", action="store_true", help="Show live video feed")
+    parser.add_argument("-s", "--save", action="store_true", help="Save images with detections")
+    parser.add_argument("-c", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
     return parser.parse_args()
 
 def main():
     args = parse_args()
+
+    # Load camera calibration data
+    if os.path.exists(args.calibration):
+        calibration_data = np.load(args.calibration)
+        print("Loaded camera calibration data.")
+    else:
+        calibration_data = None
+        print("Camera calibration data not found. Proceeding without calibration.")
 
     print("Initializing camera...")
     camera_thread = CameraThread()
@@ -36,7 +46,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     print("Creating AprilTag detector...")
-    detector = AprilTagDetector()
+    detector = AprilTagDetector(calibration_data)
     box_position = BoxPosition()
 
     # Create a subdirectory for this run
@@ -58,7 +68,7 @@ def main():
                 break
 
             frame = camera_thread.frame
-            detections = detector.detect(frame)
+            detections, undistorted_frame = detector.detect(frame)
             detected_faces = box_position.determine_position(detections)
             positions_orientations = detector.get_position_and_orientation(detections)
 
@@ -69,7 +79,7 @@ def main():
                     print(f"Tag ID: {tag_id}, Position: {position}, Orientation: {orientation:.2f} degrees")
                 last_print_time = current_time
 
-                frame_with_detections = detector.draw_detections(frame, detections)
+                frame_with_detections = detector.draw_detections(undistorted_frame, detections)
 
                 if args.save:
                     # Save the frame with detections to a file

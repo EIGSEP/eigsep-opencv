@@ -3,14 +3,27 @@ import apriltag
 import numpy as np
 
 class AprilTagDetector:
-    def __init__(self):
+    def __init__(self, calibration_data=None):
         self.options = apriltag.DetectorOptions(families="tag36h11")
         self.detector = apriltag.Detector(self.options)
+        self.calibration_data = calibration_data
+        if calibration_data:
+            self.camera_matrix = calibration_data['camera_matrix']
+            self.dist_coeffs = calibration_data['dist_coeffs']
+        else:
+            self.camera_matrix = None
+            self.dist_coeffs = None
+
+    def undistort(self, frame):
+        if self.camera_matrix is not None and self.dist_coeffs is not None:
+            return cv2.undistort(frame, self.camera_matrix, self.dist_coeffs, None, self.camera_matrix)
+        return frame
 
     def detect(self, frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        undistorted_frame = self.undistort(frame)
+        gray = cv2.cvtColor(undistorted_frame, cv2.COLOR_BGR2GRAY)
         detections = self.detector.detect(gray)
-        return detections
+        return detections, undistorted_frame
 
     def draw_detections(self, frame, detections):
         for detection in detections:
