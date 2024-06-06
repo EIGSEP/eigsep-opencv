@@ -2,6 +2,7 @@ import os
 import time
 import cv2
 import shutil
+import argparse
 from camera_thread import CameraThread
 from apriltag_detector import AprilTagDetector
 from box_position import BoxPosition
@@ -18,7 +19,15 @@ def get_next_run_number():
     else:
         return 1
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="AprilTag Box Position Detection")
+    parser.add_argument("--live", action="store_true", help="Show live video feed")
+    parser.add_argument("--save", action="store_true", help="Save images with detections")
+    return parser.parse_args()
+
 def main():
+    args = parse_args()
+
     print("Initializing camera...")
     camera_thread = CameraThread()
     camera_thread.start()
@@ -62,12 +71,18 @@ def main():
 
                 frame_with_detections = detector.draw_detections(frame, detections)
 
-                # Save the frame with detections to a file
-                image_path = os.path.join(run_dir, f'apriltag_detection_{image_count}.png')
-                cv2.imwrite(image_path, frame_with_detections)
-                saved_images.append(image_path)
-                print(f"Saved image: {image_path}")
-                image_count += 1
+                if args.save:
+                    # Save the frame with detections to a file
+                    image_path = os.path.join(run_dir, f'apriltag_detection_{image_count}.png')
+                    cv2.imwrite(image_path, frame_with_detections)
+                    saved_images.append(image_path)
+                    print(f"Saved image: {image_path}")
+                    image_count += 1
+
+                if args.live:
+                    cv2.imshow('AprilTag Detection', frame_with_detections)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
 
             time.sleep(1)  # Small delay to control the loop frequency
 
