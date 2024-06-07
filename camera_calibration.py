@@ -3,6 +3,7 @@ import numpy as np
 import os
 import glob
 import json
+from camera_thread import CameraThread
 
 def load_config(config_path='config.json'):
     if os.path.exists(config_path):
@@ -15,39 +16,38 @@ def load_config(config_path='config.json'):
     return config
 
 def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=40):
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Error: Could not open camera.")
-        return
+    camera_thread = CameraThread()
+    camera_thread.start()
 
     os.makedirs(save_dir, exist_ok=True)
     image_count = 0
 
-    while image_count < num_images:
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Could not read frame.")
-            break
+    try:
+        while image_count < num_images:
+            if camera_thread.frame_ready.wait(1):
+                frame = camera_thread.frame
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
+                if ret:
+                    cv2.drawChessboardCorners(frame, chessboard_size, corners, ret)
+                    cv2.imshow('Chessboard', frame)
+                    cv2.waitKey(1)  # Short delay to keep the display responsive
 
-        if ret:
-            cv2.drawChessboardCorners(frame, chessboard_size, corners, ret)
-            cv2.imshow('Chessboard', frame)
-            cv2.waitKey(500)  # Show the frame for 500 ms
+                    image_path = os.path.join(save_dir, f'chessboard_{image_count}.png')
+                    cv2.imwrite(image_path, frame)
+                    print(f"Saved image {image_count + 1}/{num_images}: {image_path}")
+                    image_count += 1
 
-            image_path = os.path.join(save_dir, f'chessboard_{image_count}.png')
-            cv2.imwrite(image_path, frame)
-            print(f"Saved image {image_count + 1}/{num_images}: {image_path}")
-            image_count += 1
+                cv2.imshow('Chessboard', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
-        cv2.imshow('Chessboard', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
+    except KeyboardInterrupt:
+        print("Interrupted by user")
+    finally:
+        camera_thread.stop()
+        cv2.destroyAllWindows()
 
 def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
     obj_points = []
@@ -70,7 +70,7 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
 
             cv2.drawChessboardCorners(img, chessboard_size, corners, ret)
             cv2.imshow('Chessboard', img)
-            cv2.waitKey(500)
+            cv2.waitKey(1)
 
     cv2.destroyAllWindows()
 
