@@ -81,7 +81,7 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
 
     cv2.destroyAllWindows()
 
-    print(len(obj_points), (img_points))
+    print(len(obj_points), len(img_points))
     if len(obj_points) > 0 and len(img_points) > 0:
         ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
         return camera_matrix, dist_coeffs
