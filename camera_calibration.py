@@ -27,10 +27,13 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=
         while image_count < num_images:
             if camera_thread.frame_ready.wait(1):
                 frame = camera_thread.frame
-                
+                print("Captured a new frame")
+
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                print("Converted frame to grayscale")
 
                 ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
+                print(f"Chessboard detection result: {ret}")
 
                 if ret:
                     print(f"Chessboard detected: {image_count + 1}/{num_images}")
@@ -56,47 +59,57 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=
         camera_thread.stop()
         cv2.destroyAllWindows()
 
-def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
+def calibrate_camera(image_dir, chessboard_size=(3, 3), square_size=40):
     obj_points = []
     img_points = []
 
+    # Define real world coordinates for 3D points
     objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2) * square_size
 
     images = glob.glob(os.path.join(image_dir, '*.png'))
+    print(f"Found {len(images)} images for calibration.")
 
     for fname in images:
+        print(f"Processing {fname}")
         img = cv2.imread(fname)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
+        print(f"Chessboard detection result for {fname}: {ret}")
 
         if ret:
             obj_points.append(objp)
             img_points.append(corners)
-
             cv2.drawChessboardCorners(img, chessboard_size, corners, ret)
             cv2.imshow('Chessboard', img)
-            cv2.waitKey(1)
+            cv2.waitKey(500)
+        else:
+            print(f"Failed to detect chessboard in {fname}")
 
     cv2.destroyAllWindows()
 
-    print(len(obj_points), len(img_points))
     if len(obj_points) > 0 and len(img_points) > 0:
+        print("Starting camera calibration...")
         ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
-        return camera_matrix, dist_coeffs
+        if ret:
+            print("Calibration succeeded")
+            return camera_matrix, dist_coeffs
+        else:
+            print("Calibration failed")
+            return None, None
     else:
         print("Calibration failed: No valid chessboard corners were found.")
         return None, None
 
 def main():
     parser = argparse.ArgumentParser(description="Camera calibration with chessboard patterns.")
-    parser.add_argument("-l", "--live", action="store_true", help="Show live video feed during calibration")
+    parser.add_argument("--live", action="store_true", help="Show live video feed during calibration")
     args = parser.parse_args()
 
     config = load_config()
     save_dir = 'calibration_images'
-    chessboard_size = tuple(config.get("chessboard_size", [9, 6]))
+    chessboard_size = tuple(config.get("chessboard_size", [3, 3]))
     num_images = config.get("num_images", 20)
     square_size = config.get("square_size", 40)  # Default to 40mm
 
