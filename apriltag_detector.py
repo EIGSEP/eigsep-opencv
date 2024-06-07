@@ -7,7 +7,7 @@ class AprilTagDetector:
         self.options = apriltag.DetectorOptions(families="tag36h11")
         self.detector = apriltag.Detector(self.options)
         self.calibration_data = calibration_data
-        if calibration_data:
+        if calibration_data is not None:
             self.camera_matrix = calibration_data['camera_matrix']
             self.dist_coeffs = calibration_data['dist_coeffs']
         else:
@@ -39,7 +39,7 @@ class AprilTagDetector:
 
     def get_distance_and_orientation(self, detection):
         if self.camera_matrix is None:
-            raise ValueError("Camera matrix is not available for distance and orientation calculation.")
+            return None, None
 
         # Assuming the real size of the tag is known (in meters)
         tag_size = 0.04  # example size, 40mm
