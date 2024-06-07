@@ -3,6 +3,7 @@ import numpy as np
 import os
 import glob
 import json
+import argparse
 from camera_thread import CameraThread
 
 def load_config(config_path='config.json'):
@@ -15,7 +16,7 @@ def load_config(config_path='config.json'):
         print(f"Configuration file {config_path} not found. Using default settings.")
     return config
 
-def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=40):
+def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=40, live=False):
     camera_thread = CameraThread()
     camera_thread.start()
 
@@ -26,14 +27,20 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=
         while image_count < num_images:
             if camera_thread.frame_ready.wait(1):
                 frame = camera_thread.frame
+                print("Captured a new frame")
+                
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                print("Converted frame to grayscale")
+
                 ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
+                print(f"Chessboard detection result: {ret}")
 
                 if ret:
                     print(f"Chessboard detected: {image_count + 1}/{num_images}")
                     cv2.drawChessboardCorners(frame, chessboard_size, corners, ret)
-                    cv2.imshow('Chessboard', frame)
-                    #cv2.waitKey(1)  # Short delay to keep the display responsive
+                    if live:
+                        cv2.imshow('Chessboard', frame)
+                        cv2.waitKey(1)  # Short delay to keep the display responsive
 
                     image_path = os.path.join(save_dir, f'chessboard_{image_count}.png')
                     cv2.imwrite(image_path, frame)
@@ -41,9 +48,10 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=
                     image_count += 1
                 else:
                     print("Chessboard not detected")
-                    cv2.imshow('Chessboard', frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
+                    if live:
+                        cv2.imshow('Chessboard', frame)
+                        if cv2.waitKey(1) & 0xFF == ord('q'):
+                            break
 
     except KeyboardInterrupt:
         print("Interrupted by user")
@@ -84,13 +92,17 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
         return None, None
 
 def main():
+    parser = argparse.ArgumentParser(description="Camera calibration with chessboard patterns.")
+    parser.add_argument("-l", "--live", action="store_true", help="Show live video feed during calibration")
+    args = parser.parse_args()
+
     config = load_config()
     save_dir = 'calibration_images'
     chessboard_size = tuple(config.get("chessboard_size", [9, 6]))
     num_images = config.get("num_images", 20)
     square_size = config.get("square_size", 40)  # Default to 40mm
 
-    capture_images(save_dir, num_images, chessboard_size, square_size)
+    capture_images(save_dir, num_images, chessboard_size, square_size, live=args.live)
 
     print("Calibrating camera...")
     camera_matrix, dist_coeffs = calibrate_camera(save_dir, chessboard_size, square_size)
