@@ -27,13 +27,10 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=
         while image_count < num_images:
             if camera_thread.frame_ready.wait(1):
                 frame = camera_thread.frame
-                print("Captured a new frame")
                 
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                print("Converted frame to grayscale")
 
                 ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
-                print(f"Chessboard detection result: {ret}")
 
                 if ret:
                     print(f"Chessboard detected: {image_count + 1}/{num_images}")
