@@ -2,8 +2,19 @@ import cv2
 import numpy as np
 import os
 import glob
+import json
 
-def capture_images(save_dir, num_images=20, chessboard_size=(9, 6)):
+def load_config(config_path='config.json'):
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as file:
+            config = json.load(file)
+        print(f"Loaded configuration from {config_path}.")
+    else:
+        config = {}
+        print(f"Configuration file {config_path} not found. Using default settings.")
+    return config
+
+def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=40):
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Could not open camera.")
@@ -38,12 +49,12 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6)):
     cap.release()
     cv2.destroyAllWindows()
 
-def calibrate_camera(image_dir, chessboard_size=(9, 6)):
+def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
     obj_points = []
     img_points = []
 
     objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
-    objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2)
+    objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2) * square_size
 
     images = glob.glob(os.path.join(image_dir, '*.png'))
 
@@ -68,14 +79,16 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6)):
     return camera_matrix, dist_coeffs
 
 def main():
+    config = load_config()
     save_dir = 'calibration_images'
-    chessboard_size = (9, 6)
-    num_images = 20
+    chessboard_size = tuple(config.get("chessboard_size", [9, 6]))
+    num_images = config.get("num_images", 20)
+    square_size = config.get("square_size", 40)  # Default to 40mm
 
-    capture_images(save_dir, num_images, chessboard_size)
+    capture_images(save_dir, num_images, chessboard_size, square_size)
 
     print("Calibrating camera...")
-    camera_matrix, dist_coeffs = calibrate_camera(save_dir, chessboard_size)
+    camera_matrix, dist_coeffs = calibrate_camera(save_dir, chessboard_size, square_size)
 
     print("Camera calibration complete.")
     print("Camera matrix:")
