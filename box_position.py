@@ -14,5 +14,4 @@ class BoxPosition:
             for face, id in self.face_tags.items():
                 if tag_id == id:
                     detected_faces.add(face)
-        
         return detected_faces
