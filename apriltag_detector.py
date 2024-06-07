@@ -37,11 +37,28 @@ class AprilTagDetector:
             cv2.putText(frame, str(tag_id), center, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
         return frame
 
+    def get_distance_and_orientation(self, detection):
+        if self.camera_matrix is None:
+            raise ValueError("Camera matrix is not available for distance and orientation calculation.")
+
+        # Assuming the real size of the tag is known (in meters)
+        tag_size = 0.04  # example size, 40mm
+
+        # Calculate distance
+        focal_length = self.camera_matrix[0, 0]
+        perceived_width = np.linalg.norm(detection.corners[0] - detection.corners[1])
+        distance = (tag_size * focal_length) / perceived_width
+
+        # Calculate orientation
+        orientation = np.degrees(np.arctan2(detection.corners[1][1] - detection.corners[0][1],
+                                            detection.corners[1][0] - detection.corners[0][0]))
+
+        return distance, orientation
+
     def get_position_and_orientation(self, detections):
         positions_orientations = []
         for detection in detections:
+            distance, orientation = self.get_distance_and_orientation(detection)
             position = (detection.center[0], detection.center[1])
-            orientation = np.degrees(np.arctan2(detection.corners[1][1] - detection.corners[0][1],
-                                                detection.corners[1][0] - detection.corners[0][0]))
-            positions_orientations.append((detection.tag_id, position, orientation))
+            positions_orientations.append((detection.tag_id, position, distance, orientation))
         return positions_orientations
