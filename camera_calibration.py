@@ -33,7 +33,7 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=
                     print(f"Chessboard detected: {image_count + 1}/{num_images}")
                     cv2.drawChessboardCorners(frame, chessboard_size, corners, ret)
                     cv2.imshow('Chessboard', frame)
-                    cv2.waitKey(1)  # Short delay to keep the display responsive
+                    #cv2.waitKey(1)  # Short delay to keep the display responsive
 
                     image_path = os.path.join(save_dir, f'chessboard_{image_count}.png')
                     cv2.imwrite(image_path, frame)
