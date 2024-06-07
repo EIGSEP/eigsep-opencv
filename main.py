@@ -125,10 +125,10 @@ def main():
                     logging.info(f"Saved image: {image_path}")
                     image_count += 1
 
-                if live:
-                    cv2.imshow('AprilTag Detection', frame_with_detections)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
+            if live:
+                cv2.imshow('AprilTag Detection', frame_with_detections)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
             #time.sleep(1)  # Small delay to control the loop frequency
 
