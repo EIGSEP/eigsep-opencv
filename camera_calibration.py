@@ -39,9 +39,10 @@ def capture_images(save_dir, num_images=20, chessboard_size=(9, 6), square_size=
                     print(f"Saved image {image_count + 1}/{num_images}: {image_path}")
                     image_count += 1
 
-                cv2.imshow('Chessboard', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                else:
+                    cv2.imshow('Chessboard', frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
 
     except KeyboardInterrupt:
         print("Interrupted by user")
@@ -74,9 +75,12 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
 
     cv2.destroyAllWindows()
 
-    ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
-
-    return camera_matrix, dist_coeffs
+    if len(obj_points) > 0 and len(img_points) > 0:
+        ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
+        return camera_matrix, dist_coeffs
+    else:
+        print("Calibration failed: No valid chessboard corners were found.")
+        return None, None
 
 def main():
     config = load_config()
@@ -90,14 +94,17 @@ def main():
     print("Calibrating camera...")
     camera_matrix, dist_coeffs = calibrate_camera(save_dir, chessboard_size, square_size)
 
-    print("Camera calibration complete.")
-    print("Camera matrix:")
-    print(camera_matrix)
-    print("Distortion coefficients:")
-    print(dist_coeffs)
+    if camera_matrix is not None and dist_coeffs is not None:
+        print("Camera calibration complete.")
+        print("Camera matrix:")
+        print(camera_matrix)
+        print("Distortion coefficients:")
+        print(dist_coeffs)
 
-    # Save the camera matrix and distortion coefficients to a file
-    np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs)
+        # Save the camera matrix and distortion coefficients to a file
+        np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs)
+    else:
+        print("Camera calibration failed.")
 
 if __name__ == "__main__":
     main()
