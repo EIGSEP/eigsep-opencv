@@ -109,7 +109,10 @@ def main():
             if current_time - last_print_time >= print_delay:
                 logging.info(f"Detected faces: {detected_faces}")
                 for tag_id, position, distance, orientation in positions_orientations:
-                    logging.info(f"Tag ID: {tag_id}, Position: {position}, Distance: {distance:.2f}, Orientation: {orientation:.2f} degrees")
+                    if distance is not None:
+                        logging.info(f"Tag ID: {tag_id}, Position: {position}, Distance: {distance:.2f} meters, Orientation: {orientation:.2f} degrees")
+                    else:
+                        logging.info(f"Tag ID: {tag_id}, Position: {position}, Distance: N/A, Orientation: {orientation:.2f} degrees")
                 last_print_time = current_time
 
                 frame_with_detections = detector.draw_detections(undistorted_frame, detections)
