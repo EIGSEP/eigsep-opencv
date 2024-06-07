@@ -32,13 +32,8 @@ def capture_images_and_calibrate(save_dir, num_images=20, chessboard_size=(9, 6)
         while image_count < num_images:
             if camera_thread.frame_ready.wait(1):
                 frame = camera_thread.frame
-                print("Captured a new frame")
-
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                print("Converted frame to grayscale")
-
                 ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
-                print(f"Chessboard detection result: {ret}")
 
                 if ret:
                     print(f"Chessboard detected: {image_count + 1}/{num_images}")
@@ -81,7 +76,7 @@ def capture_images_and_calibrate(save_dir, num_images=20, chessboard_size=(9, 6)
 
 def main():
     parser = argparse.ArgumentParser(description="Camera calibration with chessboard patterns.")
-    parser.add_argument("--live", action="store_true", help="Show live video feed during calibration")
+    parser.add_argument("-l", "--live", action="store_true", help="Show live video feed during calibration")
     args = parser.parse_args()
 
     config = load_config()

@@ -4,6 +4,6 @@
     "calibration": "camera_calibration_data.npz",
     "print_delay": 2,
     "num_images": 20,
-    "chessboard_size": [3, 3],
+    "chessboard_size": [4, 4],
     "square_size": 40
 }
