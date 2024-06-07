@@ -104,7 +104,7 @@ def calibrate_camera(image_dir, chessboard_size=(3, 3), square_size=40):
 
 def main():
     parser = argparse.ArgumentParser(description="Camera calibration with chessboard patterns.")
-    parser.add_argument("--live", action="store_true", help="Show live video feed during calibration")
+    parser.add_argument("-l", "--live", action="store_true", help="Show live video feed during calibration")
     args = parser.parse_args()
 
     config = load_config()
