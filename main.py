@@ -4,6 +4,8 @@ import cv2
 import shutil
 import argparse
 import numpy as np
+import logging
+import json
 from camera_thread import CameraThread
 from apriltag_detector import AprilTagDetector
 from box_position import BoxPosition
@@ -24,28 +26,49 @@ def parse_args():
     parser = argparse.ArgumentParser(description="AprilTag Box Position Detection")
     parser.add_argument("-l", "--live", action="store_true", help="Show live video feed")
     parser.add_argument("-s", "--save", action="store_true", help="Save images with detections")
-    parser.add_argument("-c", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
+    parser.add_argument("-cal", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
+    parser.add_argument("-con", "--config", type=str, default="config.json", help="Path to configuration file")
     return parser.parse_args()
 
+def load_config(config_path):
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as file:
+            config = json.load(file)
+        logging.info(f"Loaded configuration from {config_path}.")
+    else:
+        config = {}
+        logging.warning(f"Configuration file {config_path} not found. Using default settings.")
+    return config
+
+def setup_logging():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def main():
+    setup_logging()
     args = parse_args()
 
+    config = load_config(args.config)
+    live = args.live or config.get("live", False)
+    save = args.save or config.get("save", False)
+    calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
+    print_delay = config.get("print_delay", 2)
+
     # Load camera calibration data
-    if os.path.exists(args.calibration):
-        calibration_data = np.load(args.calibration)
-        print("Loaded camera calibration data.")
+    if os.path.exists(calibration_path):
+        calibration_data = np.load(calibration_path)
+        logging.info("Loaded camera calibration data.")
     else:
         calibration_data = None
-        print("Camera calibration data not found. Proceeding without calibration.")
+        logging.warning("Camera calibration data not found. Proceeding without calibration.")
 
-    print("Initializing camera...")
+    logging.info("Initializing camera...")
     camera_thread = CameraThread()
     camera_thread.start()
 
     # Wait until the first frame is captured
     camera_thread.frame_ready.wait()
 
-    print("Creating AprilTag detector...")
+    logging.info("Creating AprilTag detector...")
     detector = AprilTagDetector(calibration_data)
     box_position = BoxPosition()
 
@@ -55,16 +78,15 @@ def main():
     run_dir = os.path.join(BASE_SAVE_DIR, f'run{run_number}_{run_timestamp}')
     os.makedirs(run_dir)
 
-    print("Starting video capture...")
+    logging.info("Starting video capture...")
     last_print_time = time.time()
-    print_delay = 2  # Delay in seconds between prints
     image_count = 0
     saved_images = []
 
     try:
         while True:
             if not camera_thread.ret:
-                print("Error: Could not read frame.")
+                logging.error("Error: Could not read frame.")
                 break
 
             frame = camera_thread.frame
@@ -74,22 +96,22 @@ def main():
 
             current_time = time.time()
             if current_time - last_print_time >= print_delay:
-                print(f"Detected faces: {detected_faces}")
+                logging.info(f"Detected faces: {detected_faces}")
                 for tag_id, position, orientation in positions_orientations:
-                    print(f"Tag ID: {tag_id}, Position: {position}, Orientation: {orientation:.2f} degrees")
+                    logging.info(f"Tag ID: {tag_id}, Position: {position}, Orientation: {orientation:.2f} degrees")
                 last_print_time = current_time
 
                 frame_with_detections = detector.draw_detections(undistorted_frame, detections)
 
-                if args.save:
+                if save:
                     # Save the frame with detections to a file
                     image_path = os.path.join(run_dir, f'apriltag_detection_{image_count}.png')
                     cv2.imwrite(image_path, frame_with_detections)
                     saved_images.append(image_path)
-                    print(f"Saved image: {image_path}")
+                    logging.info(f"Saved image: {image_path}")
                     image_count += 1
 
-                if args.live:
+                if live:
                     cv2.imshow('AprilTag Detection', frame_with_detections)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
@@ -97,20 +119,20 @@ def main():
             time.sleep(1)  # Small delay to control the loop frequency
 
     except KeyboardInterrupt:
-        print("Interrupted by user")
+        logging.info("Interrupted by user")
     finally:
-        print("Releasing resources...")
+        logging.info("Releasing resources...")
         camera_thread.stop()
         cv2.destroyAllWindows()
 
         if saved_images:
             user_input = input("Do you want to keep the saved images? (y/n): ").strip().lower()
             if user_input == 'n':
-                print("Deleting saved images...")
+                logging.info("Deleting saved images...")
                 shutil.rmtree(run_dir)
-                print("Images deleted.")
+                logging.info("Images deleted.")
             else:
-                print(f"Images kept in {run_dir}")
+                logging.info(f"Images kept in {run_dir}")
 
 if __name__ == "__main__":
     main()
