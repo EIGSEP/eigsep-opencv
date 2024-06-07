@@ -28,6 +28,7 @@ def parse_args():
     parser.add_argument("-s", "--save", action="store_true", help="Save images with detections")
     parser.add_argument("-cal", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
     parser.add_argument("-con", "--config", type=str, default="config.json", help="Path to configuration file")
+    parser.add_argument("-ip", "--initial_position", type=str, default="initial_camera_position.json", help="Path to initial camera position data")
     return parser.parse_args()
 
 def load_config(config_path):
@@ -51,6 +52,7 @@ def main():
     live = args.live or config.get("live", False)
     save = args.save or config.get("save", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
+    initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     print_delay = config.get("print_delay", 2)
 
     # Load camera calibration data
@@ -60,6 +62,15 @@ def main():
     else:
         calibration_data = None
         logging.warning("Camera calibration data not found. Proceeding without calibration.")
+
+    # Load initial camera position data
+    if os.path.exists(initial_position_path):
+        with open(initial_position_path, 'r') as file:
+            initial_positions = json.load(file)
+        logging.info("Loaded initial camera position data.")
+    else:
+        initial_positions = None
+        logging.warning("Initial camera position data not found.")
 
     logging.info("Initializing camera...")
     camera_thread = CameraThread()
@@ -97,8 +108,8 @@ def main():
             current_time = time.time()
             if current_time - last_print_time >= print_delay:
                 logging.info(f"Detected faces: {detected_faces}")
-                for tag_id, position, orientation in positions_orientations:
-                    logging.info(f"Tag ID: {tag_id}, Position: {position}, Orientation: {orientation:.2f} degrees")
+                for tag_id, position, distance, orientation in positions_orientations:
+                    logging.info(f"Tag ID: {tag_id}, Position: {position}, Distance: {distance:.2f}, Orientation: {orientation:.2f} degrees")
                 last_print_time = current_time
 
                 frame_with_detections = detector.draw_detections(undistorted_frame, detections)
