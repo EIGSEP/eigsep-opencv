@@ -130,7 +130,7 @@ def main():
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
 
-            time.sleep(1)  # Small delay to control the loop frequency
+            #time.sleep(1)  # Small delay to control the loop frequency
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
