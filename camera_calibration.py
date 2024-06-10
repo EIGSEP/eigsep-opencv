@@ -16,7 +16,7 @@ def load_config(config_path='config.json'):
         print(f"Configuration file {config_path} not found. Using default settings.")
     return config
 
-def capture_images_and_calibrate(save_dir, num_images=20, chessboard_size=(9, 6), square_size=40, live=False):
+def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(3, 3), square_size=40, live=False):
     camera_thread = CameraThread()
     camera_thread.start()
 
@@ -34,7 +34,6 @@ def capture_images_and_calibrate(save_dir, num_images=20, chessboard_size=(9, 6)
                 frame = camera_thread.frame
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 ret, corners = cv2.findChessboardCorners(gray, chessboard_size, None)
-
                 if ret:
                     print(f"Chessboard detected: {image_count + 1}/{num_images}")
                     obj_points.append(objp)
@@ -66,6 +65,8 @@ def capture_images_and_calibrate(save_dir, num_images=20, chessboard_size=(9, 6)
         ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
         if ret:
             print("Calibration succeeded")
+            print(f"Camera matrix: \n{camera_matrix}")
+            print(f"Distortion coefficients: \n{dist_coeffs}")
             return camera_matrix, dist_coeffs
         else:
             print("Calibration failed")
@@ -81,9 +82,10 @@ def main():
 
     config = load_config()
     save_dir = 'calibration_images'
-    chessboard_size = tuple(config.get("chessboard_size", [9, 6]))
-    num_images = config.get("num_images", 20)
+    chessboard_size = tuple(config.get("chessboard_size", [3, 3]))
+    num_images = config.get("num_images", 30)
     square_size = config.get("square_size", 40)  # Default to 40mm
+    print(chessboard_size, num_images, square_size)
 
     print("Capturing images and calibrating camera...")
     camera_matrix, dist_coeffs = capture_images_and_calibrate(save_dir, num_images, chessboard_size, square_size, live=args.live)
