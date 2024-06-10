@@ -129,7 +129,7 @@ def main():
     save = args.save or config.get("save", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
-    tag_size = config.get("tag_size", 0.0275)  # Default tag size to 0.1 meters if not in config
+    tag_size = config.get("tag_size", 0.0275)  # Default tag size to 0.0275 meters if not in config
     print_delay = config.get("print_delay", 2)
 
     # Load camera calibration data
