@@ -4,7 +4,7 @@
     "calibration": "camera_calibration_data.npz",
     "print_delay": 2,
     "num_images": 30,
-    "chessboard_size": [7, 6],
-    "square_size": 40, 
+    "chessboard_size": [11, 8],
+    "square_size": 20, 
     "tag_size": 0.0275
 }
