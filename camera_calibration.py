@@ -33,7 +33,7 @@ def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), square_size=
 
                 if ret:
                     corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                    cv2.drawChessboardCorners(frame, chessboard_size, corners2, ret)
+                    cv2.drawChessboardCorners(gray, chessboard_size, corners2, ret)
 
                     if live:
                         cv2.imshow('Chessboard', frame)
