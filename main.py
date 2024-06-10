@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import logging
 import json
+import threading
 from camera_thread import CameraThread
 from apriltag_detector import AprilTagDetector
 from box_position import BoxPosition
@@ -44,6 +45,26 @@ def load_config(config_path):
 def setup_logging():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+class DisplayThread(threading.Thread):
+    def __init__(self, camera_thread, live):
+        threading.Thread.__init__(self)
+        self.camera_thread = camera_thread
+        self.live = live
+        self.running = True
+
+    def run(self):
+        while self.running:
+            if self.camera_thread.frame_ready.wait(1):
+                frame = self.camera_thread.frame
+                if self.live:
+                    cv2.imshow('AprilTag Detection', frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        self.running = False
+                        break
+
+    def stop(self):
+        self.running = False
+
 def main():
     setup_logging()
     args = parse_args()
@@ -58,9 +79,17 @@ def main():
     # Load camera calibration data
     if os.path.exists(calibration_path):
         calibration_data = np.load(calibration_path)
+        camera_matrix = calibration_data['camera_matrix']
+        dist_coeffs = calibration_data['dist_coeffs']
+        rvecs = calibration_data['rvecs']
+        tvecs = calibration_data['tvecs']
         logging.info("Loaded camera calibration data.")
     else:
         calibration_data = None
+        camera_matrix = None
+        dist_coeffs = None
+        rvecs = None
+        tvecs = None
         logging.warning("Camera calibration data not found. Proceeding without calibration.")
 
     # Load initial camera position data
@@ -80,7 +109,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     logging.info("Creating AprilTag detector...")
-    detector = AprilTagDetector(calibration_data)
+    detector = AprilTagDetector(camera_matrix, dist_coeffs)
     box_position = BoxPosition()
 
     # Create a subdirectory for this run
@@ -93,6 +122,9 @@ def main():
     last_print_time = time.time()
     image_count = 0
     saved_images = []
+
+    display_thread = DisplayThread(camera_thread, live)
+    display_thread.start()
 
     try:
         while True:
@@ -125,18 +157,16 @@ def main():
                     logging.info(f"Saved image: {image_path}")
                     image_count += 1
 
-                if live:
-                    cv2.imshow('AprilTag Detection', frame_with_detections)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
-
-            time.sleep(1)  # Small delay to control the loop frequency
+            time.sleep(0.01)  # Small delay to control the loop frequency
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
     finally:
         logging.info("Releasing resources...")
+        display_thread.stop()
         camera_thread.stop()
+        display_thread.join()
+        camera_thread.join()
         cv2.destroyAllWindows()
 
         if saved_images:

@@ -16,7 +16,7 @@ def load_config(config_path='config.json'):
         print(f"Configuration file {config_path} not found. Using default settings.")
     return config
 
-def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(3, 3), square_size=40, live=False):
+def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(9, 6), square_size=40, live=False):
     camera_thread = CameraThread()
     camera_thread.start()
 
@@ -28,6 +28,8 @@ def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(3, 3)
     objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2) * square_size
 
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
     try:
         while image_count < num_images:
             if camera_thread.frame_ready.wait(1):
@@ -37,12 +39,12 @@ def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(3, 3)
                 if ret:
                     print(f"Chessboard detected: {image_count + 1}/{num_images}")
                     obj_points.append(objp)
-                    img_points.append(corners)
-                    cv2.drawChessboardCorners(frame, chessboard_size, corners, ret)
+                    corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                    img_points.append(corners2)
+                    cv2.drawChessboardCorners(frame, chessboard_size, corners2, ret)
                     if live:
                         cv2.imshow('Chessboard', frame)
                         cv2.waitKey(1)  # Short delay to keep the display responsive
-
                     image_path = os.path.join(save_dir, f'chessboard_{image_count}.png')
                     cv2.imwrite(image_path, frame)
                     print(f"Saved image {image_count + 1}/{num_images}: {image_path}")
@@ -53,7 +55,6 @@ def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(3, 3)
                         cv2.imshow('Chessboard', frame)
                         if cv2.waitKey(1) & 0xFF == ord('q'):
                             break
-
     except KeyboardInterrupt:
         print("Interrupted by user")
     finally:
@@ -67,13 +68,15 @@ def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(3, 3)
             print("Calibration succeeded")
             print(f"Camera matrix: \n{camera_matrix}")
             print(f"Distortion coefficients: \n{dist_coeffs}")
-            return camera_matrix, dist_coeffs
+            print(f"Rotation vectors: \n{rvecs}")
+            print(f"Translation vectors: \n{tvecs}")
+            return camera_matrix, dist_coeffs, rvecs, tvecs
         else:
             print("Calibration failed")
-            return None, None
+            return None, None, None, None
     else:
         print("Calibration failed: No valid chessboard corners were found.")
-        return None, None
+        return None, None, None, None
 
 def main():
     parser = argparse.ArgumentParser(description="Camera calibration with chessboard patterns.")
@@ -85,10 +88,9 @@ def main():
     chessboard_size = tuple(config.get("chessboard_size", [3, 3]))
     num_images = config.get("num_images", 30)
     square_size = config.get("square_size", 40)  # Default to 40mm
-    print(chessboard_size, num_images, square_size)
 
     print("Capturing images and calibrating camera...")
-    camera_matrix, dist_coeffs = capture_images_and_calibrate(save_dir, num_images, chessboard_size, square_size, live=args.live)
+    camera_matrix, dist_coeffs, rvecs, t_vecs = capture_images_and_calibrate(save_dir, num_images, chessboard_size, square_size, live=args.live)
 
     if camera_matrix is not None and dist_coeffs is not None:
         print("Camera calibration complete.")
@@ -97,8 +99,8 @@ def main():
         print("Distortion coefficients:")
         print(dist_coeffs)
 
-        # Save the camera matrix and distortion coefficients to a file
-        np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs)
+        # Save the calibration results to a file
+        np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs, rvecs=rvecs, t_vecs=t_vecs)
     else:
         print("Camera calibration failed.")
 
