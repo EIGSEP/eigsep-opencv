@@ -3,6 +3,7 @@ import cv2 as cv
 import glob
 import json
 import os
+import argparse
 from camera_thread import CameraThread
 
 def load_config(config_path='config.json'):
@@ -121,13 +122,17 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=20):
         return None, None, None, None, None
 
 def main():
+    parser = argparse.ArgumentParser(description="Camera Calibration")
+    parser.add_argument("-l", "--live", action="store_true", help="Show live video feed")
+    args = parser.parse_args()
+
     config = load_config()
     save_dir = 'calibration_images'
     chessboard_size = tuple(config.get("chessboard_size", [9, 6]))
     num_images = config.get("num_images", 30)
     square_size = config.get("square_size", 20)  # Default to 40mm
 
-    live = config.get("live", False)
+    live = args.live or config.get("live", False)
 
     capture_images(save_dir, num_images, chessboard_size, live=live)
 
