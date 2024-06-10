@@ -3,6 +3,7 @@ import cv2 as cv
 import glob
 import json
 import os
+from camera_thread import CameraThread
 
 def load_config(config_path='config.json'):
     if os.path.exists(config_path):
@@ -17,6 +18,46 @@ def load_config(config_path='config.json'):
         }
         print(f"Configuration file {config_path} not found. Using default settings.")
     return config
+
+def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), live=False):
+    camera_thread = CameraThread()
+    camera_thread.start()
+
+    os.makedirs(save_dir, exist_ok=True)
+    image_count = 0
+    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    try:
+        while image_count < num_images:
+            if camera_thread.frame_ready.wait(1):
+                frame = camera_thread.frame
+                gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                ret, corners = cv.findChessboardCorners(gray, chessboard_size, None)
+
+                if ret:
+                    corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                    cv.drawChessboardCorners(frame, chessboard_size, corners2, ret)
+
+                    if live:
+                        cv.imshow('Chessboard', frame)
+                        cv.waitKey(1)
+
+                    image_path = os.path.join(save_dir, f'chessboard_{image_count}.png')
+                    cv.imwrite(image_path, frame)
+                    print(f"Saved image {image_count + 1}/{num_images}: {image_path}")
+                    image_count += 1
+                else:
+                    print(f"Chessboard not detected in image {image_count + 1}")
+                    if live:
+                        cv.imshow('Chessboard', frame)
+                        if cv.waitKey(1) & 0xFF == ord('q'):
+                            break
+
+    except KeyboardInterrupt:
+        print("Interrupted by user")
+    finally:
+        camera_thread.stop()
+        cv.destroyAllWindows()
 
 def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=40):
     # termination criteria
@@ -71,6 +112,10 @@ def main():
     chessboard_size = tuple(config.get("chessboard_size", [9, 6]))
     num_images = config.get("num_images", 30)
     square_size = config.get("square_size", 40)  # Default to 40mm
+
+    live = config.get("live", False)
+
+    capture_images(save_dir, num_images, chessboard_size, live=live)
 
     print("Calibrating camera...")
     camera_matrix, dist_coeffs, rvecs, tvecs, error = calibrate_camera(save_dir, chessboard_size, square_size)
