@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument("-cal", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
     parser.add_argument("-con", "--config", type=str, default="config.json", help="Path to configuration file")
     parser.add_argument("-ip", "--initial_position", type=str, default="initial_camera_position.json", help="Path to initial camera position data")
+    parser.add_argument("-t", "--tag-size", type=float, default=0.225, help="Size of the AprilTag in meters")
     return parser.parse_args()
 
 def load_config(config_path):
@@ -74,6 +75,7 @@ def main():
     save = args.save or config.get("save", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
+    tag_size = args.tag_size
     print_delay = config.get("print_delay", 2)
 
     # Load camera calibration data
@@ -105,7 +107,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     logging.info("Creating AprilTag detector...")
-    detector = AprilTagDetector(camera_matrix, dist_coeffs)
+    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size)
     box_position = BoxPosition()
 
     # Create a subdirectory for this run

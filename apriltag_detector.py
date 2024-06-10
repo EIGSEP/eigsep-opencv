@@ -3,9 +3,10 @@ import apriltag
 import numpy as np
 
 class AprilTagDetector:
-    def __init__(self, camera_matrix=None, dist_coeffs=None):
+    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.225):
         self.camera_matrix = camera_matrix
         self.dist_coeffs = dist_coeffs
+        self.tag_size = tag_size
         self.detector = apriltag.Detector()
 
     def detect(self, frame):
@@ -25,7 +26,7 @@ class AprilTagDetector:
                     [0.5, -0.5, 0],
                     [0.5, 0.5, 0],
                     [-0.5, 0.5, 0]
-                ]) * detection.tag_size
+                ]) * self.tag_size
 
                 image_points = np.array(corners, dtype=np.float32)
 
