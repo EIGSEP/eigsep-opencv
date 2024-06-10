@@ -66,10 +66,6 @@ def capture_images_and_calibrate(save_dir, num_images=30, chessboard_size=(9, 6)
         ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
         if ret:
             print("Calibration succeeded")
-            print(f"Camera matrix: \n{camera_matrix}")
-            print(f"Distortion coefficients: \n{dist_coeffs}")
-            print(f"Rotation vectors: \n{rvecs}")
-            print(f"Translation vectors: \n{tvecs}")
             return camera_matrix, dist_coeffs, rvecs, tvecs
         else:
             print("Calibration failed")
@@ -94,10 +90,10 @@ def main():
 
     if camera_matrix is not None and dist_coeffs is not None:
         print("Camera calibration complete.")
-        print("Camera matrix:")
-        print(camera_matrix)
-        print("Distortion coefficients:")
-        print(dist_coeffs)
+        print(f"Camera matrix: \n{camera_matrix}")
+        print(f"Distortion coefficients: \n{dist_coeffs}")
+        print(f"Rotation vectors: \n{rvecs}")
+        print(f"Translation vectors: \n{tvecs}")
 
         # Save the calibration results to a file
         np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs, rvecs=rvecs, tvecs=tvecs)
