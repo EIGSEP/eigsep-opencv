@@ -90,7 +90,7 @@ def main():
     square_size = config.get("square_size", 40)  # Default to 40mm
 
     print("Capturing images and calibrating camera...")
-    camera_matrix, dist_coeffs, rvecs, t_vecs = capture_images_and_calibrate(save_dir, num_images, chessboard_size, square_size, live=args.live)
+    camera_matrix, dist_coeffs, rvecs, tvecs = capture_images_and_calibrate(save_dir, num_images, chessboard_size, square_size, live=args.live)
 
     if camera_matrix is not None and dist_coeffs is not None:
         print("Camera calibration complete.")
@@ -100,7 +100,7 @@ def main():
         print(dist_coeffs)
 
         # Save the calibration results to a file
-        np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs, rvecs=rvecs, t_vecs=t_vecs)
+        np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs, rvecs=rvecs, tvecs=tvecs)
     else:
         print("Camera calibration failed.")
 
