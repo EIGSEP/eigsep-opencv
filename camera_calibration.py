@@ -101,22 +101,25 @@ def main():
     num_images = config.get("num_images", 30)
     square_size = config.get("square_size", 40)  # Default to 40mm
 
-    capture_images(save_dir, num_images, chessboard_size, square_size, live=args.live)
+    try:
+        capture_images(save_dir, num_images, chessboard_size, square_size, live=args.live)
 
-    print("Calibrating camera...")
-    camera_matrix, dist_coeffs, rvecs, tvecs, error = calibrate_camera(save_dir, chessboard_size, square_size)
+        print("Calibrating camera...")
+        camera_matrix, dist_coeffs, rvecs, tvecs, error = calibrate_camera(save_dir, chessboard_size, square_size)
 
-    if camera_matrix is not None and dist_coeffs is not None:
-        print("Camera calibration complete.")
-        print("Camera matrix:")
-        print(camera_matrix)
-        print("Distortion coefficients:")
-        print(dist_coeffs)
-        print("Reprojection error:")
-        print(error)
+        if camera_matrix is not None and dist_coeffs is not None:
+            print("Camera calibration complete.")
+            print("Camera matrix:")
+            print(camera_matrix)
+            print("Distortion coefficients:")
+            print(dist_coeffs)
+            print("Reprojection error:")
+            print(error)
 
-        np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs, rvecs=rvecs, tvecs=tvecs, error=error)
-    else:
+            np.savez('camera_calibration_data.npz', camera_matrix=camera_matrix, dist_coeffs=dist_coeffs, rvecs=rvecs, tvecs=tvecs, error=error)
+        else:
+            print("Camera calibration failed.")
+    except KeyboardInterrupt:
         print("Camera calibration failed.")
 
 if __name__ == "__main__":
