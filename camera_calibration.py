@@ -40,7 +40,7 @@ def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), square_size=
                         cv2.waitKey(1)
 
                     image_path = os.path.join(save_dir, f'chessboard_{image_count}.png')
-                    cv2.imwrite(image_path, frame)
+                    cv2.imwrite(image_path, gray)
                     print(f"Saved image {image_count + 1}/{num_images}: {image_path}")
                     image_count += 1
                 else:
