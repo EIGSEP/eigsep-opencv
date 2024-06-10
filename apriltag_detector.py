@@ -3,62 +3,55 @@ import apriltag
 import numpy as np
 
 class AprilTagDetector:
-    def __init__(self, calibration_data=None):
-        self.options = apriltag.DetectorOptions(families="tag36h11")
-        self.detector = apriltag.Detector(self.options)
-        self.calibration_data = calibration_data
-        if calibration_data is not None:
-            self.camera_matrix = calibration_data['camera_matrix']
-            self.dist_coeffs = calibration_data['dist_coeffs']
-        else:
-            self.camera_matrix = None
-            self.dist_coeffs = None
-
-    def undistort(self, frame):
-        if self.camera_matrix is not None and self.dist_coeffs is not None:
-            return cv2.undistort(frame, self.camera_matrix, self.dist_coeffs, None, self.camera_matrix)
-        return frame
+    def __init__(self, camera_matrix=None, dist_coeffs=None):
+        self.camera_matrix = camera_matrix
+        self.dist_coeffs = dist_coeffs
+        self.detector = apriltag.Detector()
 
     def detect(self, frame):
-        undistorted_frame = self.undistort(frame)
-        gray = cv2.cvtColor(undistorted_frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         detections = self.detector.detect(gray)
-        return detections, undistorted_frame
-
-    def draw_detections(self, frame, detections):
-        for detection in detections:
-            for i in range(4):
-                pt1 = (int(detection.corners[i][0]), int(detection.corners[i][1]))
-                pt2 = (int(detection.corners[(i + 1) % 4][0]), int(detection.corners[(i + 1) % 4][1]))
-                cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
-            center = (int(detection.center[0]), int(detection.center[1]))
-            cv2.circle(frame, center, 5, (0, 0, 255), -1)
-            tag_id = detection.tag_id
-            cv2.putText(frame, str(tag_id), center, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-        return frame
-
-    def get_distance_and_orientation(self, detection):
-        if self.camera_matrix is None:
-            return None, None
-
-        # Assuming the real size of the tag is known (in meters)
-        tag_size = 0.04  # example size, 40mm
-
-        # Calculate distance
-        focal_length = self.camera_matrix[0, 0]
-        perceived_width = np.linalg.norm(detection.corners[0] - detection.corners[1])
-        distance = (tag_size * focal_length) / perceived_width
-
-        # Calculate orientation
-        orientation = np.degrees(np.arctan2(detection.corners[1][1] - detection.corners[0][1],
-                                            detection.corners[1][0] - detection.corners[0][0]))
-
-        return distance, orientation
+        return detections, gray
 
     def get_position_and_orientation(self, detections):
         positions_orientations = []
         for detection in detections:
-            distance, orientation = self.get_distance_and_orientation(detection)
-            position = (detection.center[0], detection.center[1])
-            positions_orientations.append((detection.tag_id, position, distance, orientation))
+            corners = detection.corners
+            tag_id = detection.tag_id
+
+            if self.camera_matrix is not None and self.dist_coeffs is not None:
+                object_points = np.array([
+                    [-0.5, -0.5, 0],
+                    [0.5, -0.5, 0],
+                    [0.5, 0.5, 0],
+                    [-0.5, 0.5, 0]
+                ]) * detection.tag_size
+
+                image_points = np.array(corners, dtype=np.float32)
+
+                success, rvec, tvec = cv2.solvePnP(object_points, image_points, self.camera_matrix, self.dist_coeffs)
+                if success:
+                    position = tvec.flatten()
+                    rotation_matrix, _ = cv2.Rodrigues(rvec)
+                    orientation = cv2.RQDecomp3x3(rotation_matrix)[0]
+                    positions_orientations.append((tag_id, position, tvec, orientation))
+                else:
+                    positions_orientations.append((tag_id, None, None, None))
+            else:
+                positions_orientations.append((tag_id, None, None, None))
+
         return positions_orientations
+
+    def draw_detections(self, frame, detections):
+        for detection in detections:
+            corners = detection.corners
+            corners = np.int32(corners)
+            cv2.polylines(frame, [corners], isClosed=True, color=(0, 255, 0), thickness=2)
+
+            center = tuple(np.int32(detection.center))
+            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+
+            tag_id = str(detection.tag_id)
+            cv2.putText(frame, tag_id, center, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+
+        return frame

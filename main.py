@@ -81,15 +81,11 @@ def main():
         calibration_data = np.load(calibration_path)
         camera_matrix = calibration_data['camera_matrix']
         dist_coeffs = calibration_data['dist_coeffs']
-        rvecs = calibration_data['rvecs']
-        tvecs = calibration_data['tvecs']
         logging.info("Loaded camera calibration data.")
     else:
         calibration_data = None
         camera_matrix = None
         dist_coeffs = None
-        rvecs = None
-        tvecs = None
         logging.warning("Camera calibration data not found. Proceeding without calibration.")
 
     # Load initial camera position data
@@ -109,7 +105,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     logging.info("Creating AprilTag detector...")
-    detector = AprilTagDetector((camera_matrix, dist_coeffs))
+    detector = AprilTagDetector(camera_matrix, dist_coeffs)
     box_position = BoxPosition()
 
     # Create a subdirectory for this run
@@ -140,10 +136,10 @@ def main():
             current_time = time.time()
             if current_time - last_print_time >= print_delay:
                 logging.info(f"Detected faces: {detected_faces}")
-                for tag_id, position, distance, orientation in positions_orientations:
-                    pos_str = f"Position: {position}" if position else "Position: N/A"
-                    dist_str = f"Distance: {distance:.2f} meters" if distance is not None else "Distance: N/A"
-                    orient_str = f"Orientation: {orientation:.2f} degrees" if orientation is not None else "Orientation: N/A"
+                for tag_id, position, tvec, orientation in positions_orientations:
+                    pos_str = f"Position: {position}" if position is not None else "Position: N/A"
+                    dist_str = f"Distance: {np.linalg.norm(tvec):.2f} meters" if tvec is not None else "Distance: N/A"
+                    orient_str = f"Orientation: {orientation}" if orientation is not None else "Orientation: N/A"
                     logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}, {orient_str}")
                 last_print_time = current_time
 
