@@ -3,7 +3,7 @@ import apriltag
 import numpy as np
 
 class AprilTagDetector:
-    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.275):
+    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.0275):
         self.camera_matrix = camera_matrix
         self.dist_coeffs = dist_coeffs
         self.tag_size = tag_size

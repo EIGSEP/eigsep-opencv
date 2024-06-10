@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument("-cal", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
     parser.add_argument("-con", "--config", type=str, default="config.json", help="Path to configuration file")
     parser.add_argument("-ip", "--initial_position", type=str, default="initial_camera_position.json", help="Path to initial camera position data")
-    parser.add_argument("-t", "--tag-size", type=float, default=0.275, help="Size of the AprilTag in meters")
+    parser.add_argument("-t", "--tag-size", type=float, default=0.0275, help="Size of the AprilTag in meters")
     return parser.parse_args()
 
 def load_config(config_path):
