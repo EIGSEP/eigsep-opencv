@@ -1,6 +1,4 @@
 {
-    "live": false,
-    "save": false,
     "calibration": "camera_calibration_data.npz",
     "print_delay": 2,
     "num_images": 30,
