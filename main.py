@@ -8,7 +8,7 @@ import logging
 import json
 import threading
 import queue
-from camera_thread import CameraThread
+from camera_thread import CameraThread, DetectionThread
 from apriltag_detector import AprilTagDetector
 from box_position import BoxPosition
 
@@ -74,62 +74,16 @@ class DisplayThread(threading.Thread):
     def stop(self):
         self.running = False
 
-class DetectionThread(threading.Thread):
-    def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir):
-        threading.Thread.__init__(self)
-        self.camera_thread = camera_thread
-        self.detector = detector
-        self.display_queue = display_queue
-        self.print_delay = print_delay
-        self.save = save
-        self.run_dir = run_dir
-        self.running = True
-        self.image_count = 0
-
-    def run(self):
-        last_print_time = time.time()
-        while self.running:
-            if self.camera_thread.frame_ready.wait(1):
-                frame = self.camera_thread.frame
-                detections, undistorted_frame = self.detector.detect(frame)
-                positions_orientations = self.detector.get_position_and_orientation(detections)
-
-                current_time = time.time()
-                if current_time - last_print_time >= self.print_delay:
-                    for tag_id, position, tvec, orientation in positions_orientations:
-                        pos_str = f"Position: {position}" if position is not None else "Position: N/A"
-                        if tvec is not None:
-                            distance = np.linalg.norm(tvec)
-                            dist_str = f"Distance: {distance:.2f} meters"
-                            logging.info(f"Tag ID: {tag_id}, Position: {position}, Distance: {distance:.2f} meters, Orientation: {orientation}")
-                        else:
-                            dist_str = "Distance: N/A"
-                            logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
-                    
-                    frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
-                    self.display_queue.put(frame_with_detections)
-
-                    if self.save:
-                        image_path = os.path.join(self.run_dir, f'apriltag_detection_{self.image_count}.png')
-                        cv2.imwrite(image_path, frame_with_detections)
-                        logging.info(f"Saved image: {image_path}")
-                        self.image_count += 1
-
-                    last_print_time = current_time
-
-    def stop(self):
-        self.running = False
-
 def main():
     setup_logging()
     args = parse_args()
 
     config = load_config(args.config)
-    live = args.live or config.get("live", False)
+    live = args.live if args.live is not None else config.get("live", False)
     save = args.save or config.get("save", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
-    tag_size = config.get("tag_size", 0.0275)  # Default tag size to 0.0275 meters if not in config
+    tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
     print_delay = config.get("print_delay", 2)
 
     # Load camera calibration data
