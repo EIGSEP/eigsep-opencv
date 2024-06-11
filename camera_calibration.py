@@ -132,7 +132,7 @@ def main():
     num_images = config.get("num_images", 30)
     square_size = config.get("square_size", 20)  # Default to 40mm
 
-    live = args.live or config.get("live", False)
+    live = args.live if args.live is not None else False
 
     capture_images(save_dir, num_images, chessboard_size, live=live)
 

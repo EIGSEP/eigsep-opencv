@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import json
 import argparse
+import os
 from apriltag_detector import AprilTagDetector
 
 def load_config(config_path='config.json'):
@@ -16,7 +17,7 @@ def load_config(config_path='config.json'):
 
 def main():
     parser = argparse.ArgumentParser(description="Initial Camera Position Calibration.")
-    parser.add_argument('--calibration', type=str, default='camera_calibration_data.npz', help='Path to the camera calibration data.')
+    parser.add_argument('-cal', '--calibration', type=str, default='camera_calibration_data.npz', help='Path to the camera calibration data.')
     args = parser.parse_args()
 
     config = load_config()
