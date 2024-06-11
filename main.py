@@ -50,9 +50,8 @@ def main():
     args = parse_args()
 
     config = load_config(args.config)
-    live = args.live if args.live is not None else False
-    print(live)
-    save = args.save if args.save is not None else False
+    live = args.live if args.live is not None else config.get("live", False)
+    save = args.save or config.get("save", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
@@ -88,7 +87,7 @@ def main():
 
     logging.info("Creating AprilTag detector...")
     detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size)
-    box_position = BoxPosition()
+    box_position = BoxPosition(initial_positions)  # Assuming BoxPosition takes initial_positions as an argument
 
     # Create a subdirectory for this run
     run_number = get_next_run_number()
@@ -103,7 +102,7 @@ def main():
     display_thread = DisplayThread(camera_thread, live, display_queue)
     display_thread.start()
 
-    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save, run_dir)
+    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save, run_dir, box_position)
     detection_thread.start()
 
     try:
