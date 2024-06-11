@@ -45,10 +45,11 @@ class DisplayThread(threading.Thread):
 
                 if not self.display_queue.empty():
                     frame_with_detections = self.display_queue.get()
-                    cv2.imshow('AprilTag Detection', frame_with_detections)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        self.running = False
-                        break
+                    if self.live:
+                        cv2.imshow('AprilTag Detection', frame_with_detections)
+                        if cv2.waitKey(1) & 0xFF == ord('q'):
+                            self.running = False
+                            break
 
     def stop(self):
         self.running = False
