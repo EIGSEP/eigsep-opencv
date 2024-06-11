@@ -1,6 +1,7 @@
 import threading
 import time
 import cv2
+import queue
 import os
 import logging
 import numpy as np
@@ -55,7 +56,7 @@ class DisplayThread(threading.Thread):
         self.running = False
 
 class DetectionThread(threading.Thread):
-    def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir):
+    def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir, box_position):
         threading.Thread.__init__(self)
         self.camera_thread = camera_thread
         self.detector = detector
@@ -63,6 +64,7 @@ class DetectionThread(threading.Thread):
         self.print_delay = print_delay
         self.save = save
         self.run_dir = run_dir
+        self.box_position = box_position
         self.running = True
         self.image_count = 0
 
@@ -73,6 +75,8 @@ class DetectionThread(threading.Thread):
                 frame = self.camera_thread.frame
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
+                detected_faces = self.box_position.determine_position(detections)
+                current_position, current_orientation = self.box_position.calculate_position(detections)
 
                 current_time = time.time()
                 if current_time - last_print_time >= self.print_delay:
@@ -85,6 +89,9 @@ class DetectionThread(threading.Thread):
                         else:
                             dist_str = "Distance: N/A"
                             logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
+                    
+                    logging.info(f"Detected faces: {detected_faces}")
+                    logging.info(f"Current box position: {current_position}, Orientation: {current_orientation}")
                     
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
                     self.display_queue.put(frame_with_detections)
