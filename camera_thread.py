@@ -1,6 +1,9 @@
 import threading
 import time
 import cv2
+import os
+import logging
+import numpy as np
 
 class CameraThread(threading.Thread):
     def __init__(self, camera_index=0):
@@ -21,6 +24,34 @@ class CameraThread(threading.Thread):
     def stop(self):
         self.running = False
         self.cap.release()
+
+class DisplayThread(threading.Thread):
+    def __init__(self, camera_thread, live, display_queue):
+        threading.Thread.__init__(self)
+        self.camera_thread = camera_thread
+        self.live = live
+        self.running = True
+        self.display_queue = display_queue
+
+    def run(self):
+        while self.running:
+            if self.camera_thread.frame_ready.wait(1):
+                frame = self.camera_thread.frame
+                if self.live:
+                    cv2.imshow('AprilTag Detection', frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        self.running = False
+                        break
+
+                if not self.display_queue.empty():
+                    frame_with_detections = self.display_queue.get()
+                    cv2.imshow('AprilTag Detection', frame_with_detections)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        self.running = False
+                        break
+
+    def stop(self):
+        self.running = False
 
 class DetectionThread(threading.Thread):
     def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir):

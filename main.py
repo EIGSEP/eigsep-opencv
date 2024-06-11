@@ -6,9 +6,8 @@ import argparse
 import numpy as np
 import logging
 import json
-import threading
 import queue
-from camera_thread import CameraThread, DetectionThread
+from camera_thread import CameraThread, DisplayThread, DetectionThread
 from apriltag_detector import AprilTagDetector
 from box_position import BoxPosition
 
@@ -46,41 +45,14 @@ def load_config(config_path):
 def setup_logging():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class DisplayThread(threading.Thread):
-    def __init__(self, camera_thread, live, display_queue):
-        threading.Thread.__init__(self)
-        self.camera_thread = camera_thread
-        self.live = live
-        self.running = True
-        self.display_queue = display_queue
-
-    def run(self):
-        while self.running:
-            if self.camera_thread.frame_ready.wait(1):
-                frame = self.camera_thread.frame
-                if self.live:
-                    cv2.imshow('AprilTag Detection', frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        self.running = False
-                        break
-
-                if not self.display_queue.empty():
-                    frame_with_detections = self.display_queue.get()
-                    cv2.imshow('AprilTag Detection', frame_with_detections)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        self.running = False
-                        break
-
-    def stop(self):
-        self.running = False
-
 def main():
     setup_logging()
     args = parse_args()
 
     config = load_config(args.config)
     live = args.live if args.live is not None else False
-    save = args.save if args.live is not None else False
+    print(live)
+    save = args.save if args.save is not None else False
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
