@@ -25,46 +25,20 @@ class BoxPosition:
                     detected_faces.add(face)
         return detected_faces
 
-    def calculate_position(self, detections, detector):
+    def calculate_position(self, positions_orientations):
         if not self.initial_positions:
             return None, None
 
         positions = []
-        positions_orientations = detector.get_position_and_orientation(detections)
+        orientations = []
         for tag_id, position, tvec, orientation in positions_orientations:
             if position is not None:
                 positions.append(position)
+                orientations.append(orientation)
 
         if positions:
             avg_position = np.mean(positions, axis=0)
-            return avg_position, self.get_orientation_from_tags(detections)
+            avg_orientation = np.mean(orientations) if orientations else None
+            return avg_position, avg_orientation
         else:
             return None, None
-
-    def get_position_from_tag(self, face, tag_id, distance, orientation):
-        # Simplified example, would need real calculations based on tag and face layout
-        x, y, z = 0, 0, 0
-        if face == 'right':
-            if tag_id == self.face_tags[face]['top']:
-                y = distance
-            elif tag_id == self.face_tags[face]['bottom']:
-                y = -distance
-        elif face == 'bottom':
-            if tag_id == self.face_tags[face]['top']:
-                x = distance
-            elif tag_id == self.face_tags[face]['bottom']:
-                x = -distance
-        elif face == 'left':
-            if tag_id == self.face_tags[face]['top']:
-                y = distance
-            elif tag_id == self.face_tags[face]['bottom']:
-                y = -distance
-        return np.array([x, y, z])
-
-    def get_orientation_from_tags(self, detections):
-        orientations = [d.orientation for d in detections if d.orientation is not None]
-        if orientations:
-            avg_orientation = np.mean(orientations)
-            return avg_orientation
-        else:
-            return None

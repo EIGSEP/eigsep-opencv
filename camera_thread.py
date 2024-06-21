@@ -76,7 +76,7 @@ class DetectionThread(threading.Thread):
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
                 detected_faces = self.box_position.determine_position(detections)
-                current_position, current_orientation = self.box_position.calculate_position(detections, self.detector)
+                current_position, current_orientation = self.box_position.calculate_position(positions_orientations)
 
                 current_time = time.time()
                 if current_time - last_print_time >= self.print_delay:
