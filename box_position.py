@@ -25,19 +25,15 @@ class BoxPosition:
                     detected_faces.add(face)
         return detected_faces
 
-    def calculate_position(self, detections):
+    def calculate_position(self, detections, detector):
         if not self.initial_positions:
             return None, None
 
         positions = []
-        for detection in detections:
-            tag_id = detection.tag_id
-            for face, tags in self.face_tags.items():
-                if tag_id in tags.values():
-                    distance = detection.distance
-                    orientation = detection.orientation
-                    pos = self.get_position_from_tag(face, tag_id, distance, orientation)
-                    positions.append(pos)
+        positions_orientations = detector.get_position_and_orientation(detections)
+        for tag_id, position, tvec, orientation in positions_orientations:
+            if position is not None:
+                positions.append(position)
 
         if positions:
             avg_position = np.mean(positions, axis=0)
