@@ -24,12 +24,19 @@ def main():
     calibration_file = args.calibration or config.get('calibration', 'camera_calibration_data.npz')
     calibration_data = np.load(calibration_file) if os.path.exists(calibration_file) else None
 
+    if calibration_data is not None:
+        camera_matrix = calibration_data['camera_matrix']
+        dist_coeffs = calibration_data['dist_coeffs']
+    else:
+        camera_matrix = None
+        dist_coeffs = None
+
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Could not open camera.")
         return
 
-    tag_detector = AprilTagDetector(calibration_data)
+    tag_detector = AprilTagDetector(camera_matrix, dist_coeffs)
 
     while True:
         ret, frame = cap.read()
@@ -37,18 +44,18 @@ def main():
             print("Error: Could not read frame.")
             break
 
-        detections, frame = tag_detector.detect(frame)
+        detections, gray_frame = tag_detector.detect(frame)
         frame = tag_detector.draw_detections(frame, detections)
 
         if len(detections) > 0:
             initial_positions = []
-            for detection in detections:
-                distance, orientation = tag_detector.get_position_and_orientation(detection)
+            positions_orientations = tag_detector.get_position_and_orientation(detections)
+            for tag_id, position, tvec, orientation in positions_orientations:
                 initial_positions.append({
-                    'tag_id': detection.tag_id,
-                    'distance': distance,
+                    'tag_id': tag_id,
+                    'distance': np.linalg.norm(tvec) if tvec is not None else None,
                     'orientation': orientation,
-                    'center': detection.center
+                    'center': position.tolist() if position is not None else None
                 })
             print("Initial positions:", initial_positions)
             break
