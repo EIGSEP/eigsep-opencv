@@ -43,7 +43,7 @@ def main():
         if len(detections) > 0:
             initial_positions = []
             for detection in detections:
-                distance, orientation = tag_detector.get_distance_and_orientation(detection)
+                distance, orientation = tag_detector.get_position_and_orientation(detection)
                 initial_positions.append({
                     'tag_id': detection.tag_id,
                     'distance': distance,

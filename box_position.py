@@ -9,11 +9,10 @@ class BoxPosition:
             'top': {'top': 4, 'bottom': 5}  # Currently not used
         }
         self.tag_relationships = {
-            1: 25,  # Bottom of the right face borders the top of the bottom face
-            25: 3,  # Bottom of the bottom face borders the top of the left face
+            1: 24,  # Bottom of the right face borders the top of the bottom face
+            25: 2,  # Bottom of the bottom face borders the top of the left face
             3: 4,   # Bottom of the left face borders the top of the top face (currently not used)
-            4: 5,   # Bottom of the top face borders the top of the right face (currently not used)
-            0: 5    # Top of the right face borders the bottom of the top face (currently not used)
+            5: 0,   # Bottom of the top face borders the top of the right face (currently not used)
         }
         self.initial_positions = initial_positions if initial_positions else []
 
