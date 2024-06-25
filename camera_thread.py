@@ -92,6 +92,7 @@ class DetectionThread(threading.Thread):
                     
                     logging.info(f"Detected faces: {detected_faces}")
                     logging.info(f"Current box position: {current_position}, Orientation: {current_orientation}")
+                    logging.info(f"Rotation count: {self.box_position.rotation_count}")
                     
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
                     self.display_queue.put(frame_with_detections)

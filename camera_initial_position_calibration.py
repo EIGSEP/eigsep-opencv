@@ -15,6 +15,11 @@ def load_config(config_path='config.json'):
         print(f"Configuration file {config_path} not found. Using default settings.")
     return config
 
+def save_initial_positions(initial_positions, file_path='initial_camera_position.json'):
+    with open(file_path, 'w') as file:
+        json.dump(initial_positions, file)
+    print(f"Initial camera position saved to {file_path}")
+
 def main():
     parser = argparse.ArgumentParser(description="Initial Camera Position Calibration.")
     parser.add_argument('-cal', '--calibration', type=str, default='camera_calibration_data.npz', help='Path to the camera calibration data.')
@@ -37,6 +42,9 @@ def main():
         return
 
     tag_detector = AprilTagDetector(camera_matrix, dist_coeffs)
+    seen_tags = {}
+    rotation_count = 0
+    rotation_order = []
 
     while True:
         ret, frame = cap.read()
@@ -48,16 +56,24 @@ def main():
         frame = tag_detector.draw_detections(frame, detections)
 
         if len(detections) > 0:
-            initial_positions = []
             positions_orientations = tag_detector.get_position_and_orientation(detections)
             for tag_id, position, tvec, orientation in positions_orientations:
-                initial_positions.append({
-                    'tag_id': tag_id,
-                    'distance': np.linalg.norm(tvec) if tvec is not None else None,
-                    'orientation': orientation,
-                    'center': position.tolist() if position is not None else None
-                })
-            print("Initial positions:", initial_positions)
+                if tag_id not in seen_tags:
+                    seen_tags[tag_id] = {
+                        'position': position.tolist() if position is not None else None,
+                        'distance': np.linalg.norm(tvec) if tvec is not None else None,
+                        'orientation': orientation
+                    }
+
+                if tag_id not in rotation_order:
+                    rotation_order.append(tag_id)
+
+                if len(rotation_order) == 4:  # Assuming we have 4 sides to detect
+                    rotation_count += 1
+                    rotation_order = []
+
+            print("Seen tags:", seen_tags)
+            print("Rotation count:", rotation_count)
             break
 
         cv2.imshow('Initial Position Calibration', frame)
@@ -67,9 +83,7 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
 
-    with open('initial_camera_position.json', 'w') as file:
-        json.dump(initial_positions, file)
-    print("Initial camera position saved to initial_camera_position.json")
+    save_initial_positions(seen_tags)
 
 if __name__ == "__main__":
     main()
