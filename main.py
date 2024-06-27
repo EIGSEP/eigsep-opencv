@@ -7,6 +7,7 @@ import numpy as np
 import logging
 import json
 import queue
+from datetime import datetime
 from camera_thread import CameraThread, DisplayThread, DetectionThread
 from apriltag_detector import AprilTagDetector
 from box_position import BoxPosition
@@ -51,7 +52,7 @@ def setup_logging():
 def save_run_data(run_data, run_dir):
     data_path = os.path.join(run_dir, 'run_data.json')
     with open(data_path, 'w') as file:
-        json.dump(run_data, file)
+        json.dump(run_data, file, indent=4)
     logging.info(f"Saved run data: {data_path}")
     return data_path
 
@@ -125,11 +126,24 @@ def main():
         while True:
             time.sleep(0.1)
             if save_data:
-                current_position, current_orientation = box_position.calculate_position(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
-                run_data.append({
-                    'position': current_position.tolist() if current_position is not None else None,
-                    'orientation': current_orientation
-                })
+                detections, _ = detector.detect(camera_thread.frame)
+                positions_orientations = detector.get_position_and_orientation(detections)
+                current_position, current_orientation = box_position.calculate_position(positions_orientations)
+                run_data_entry = {
+                    'timestamp': datetime.now().isoformat(),
+                    'detected_tags': [
+                        {
+                            'tag_id': tag_id,
+                            'position': position.tolist() if position is not None else None,
+                            'distance': np.linalg.norm(tvec) if tvec is not None else None,
+                            'orientation': orientation
+                        } for tag_id, position, tvec, orientation in positions_orientations
+                    ],
+                    'box_position': current_position.tolist() if current_position is not None else None,
+                    'box_orientation': current_orientation,
+                    'rotation_count': box_position.rotation_count
+                }
+                run_data.append(run_data_entry)
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
@@ -157,10 +171,10 @@ def main():
             user_input_data = input("Do you want to keep the saved run data? (y/n): ").strip().lower()
             if user_input_data == 'n':
                 logging.info("Deleting saved run data...")
-                os.remove(data_path)
+                shutil.rmtree(run_data_dir)
                 logging.info("Run data deleted.")
             else:
-                logging.info(f"Run data kept in {data_path}")
+                logging.info(f"Run data kept in {run_data_dir}")
 
 if __name__ == "__main__":
     main()
