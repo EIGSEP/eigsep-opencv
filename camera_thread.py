@@ -75,6 +75,7 @@ class DetectionThread(threading.Thread):
                 frame = self.camera_thread.frame
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
+                print(positions_orientations)
                 current_position, old_orientation, relative_orientation = self.box_position.calculate_orientation(positions_orientations)
 
                 current_time = time.time()
