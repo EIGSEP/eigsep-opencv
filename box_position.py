@@ -20,7 +20,7 @@ class BoxPosition:
 
     def determine_orientation(self, positions_orientations):
         # Calculate the orientation of the box using the positions of the detected tags
-        print(positions_orientations)
+        #print(positions_orientations)
         if len(positions_orientations) < 2:
             return None, None
 

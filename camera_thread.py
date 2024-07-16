@@ -76,7 +76,7 @@ class DetectionThread(threading.Thread):
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
                 current_position, old_orientation, relative_orientation = self.box_position.calculate_orientation(positions_orientations)
-                print(current_position)
+                #print(current_position)
 
                 current_time = time.time()
                 if current_time - last_print_time >= self.print_delay:
