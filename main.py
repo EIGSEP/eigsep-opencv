@@ -36,7 +36,7 @@ def parse_args():
 
 def load_config(config_path):
     if os.path.exists(config_path):
-        with open(config_path, 'r') as file):
+        with open(config_path, 'r') as file:
             config = json.load(file)
         logging.info(f"Loaded configuration from {config_path}.")
     else:
@@ -49,7 +49,7 @@ def setup_logging():
 
 def save_run_data(run_data, run_dir):
     data_path = os.path.join(run_dir, 'run_data.json')
-    with open(data_path, 'w') as file):
+    with open(data_path, 'w') as file:
         json.dump(run_data, file, indent=4)
     logging.info(f"Saved run data: {data_path}")
     return data_path
