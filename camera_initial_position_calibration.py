@@ -43,8 +43,8 @@ def main():
 
     tag_detector = AprilTagDetector(camera_matrix, dist_coeffs)
     seen_tags = {}
-    rotation_order = []
     rotation_count = 0
+    rotation_order = []
 
     while True:
         ret, frame = cap.read()
@@ -68,7 +68,7 @@ def main():
                 if tag_id not in rotation_order:
                     rotation_order.append(tag_id)
 
-                if len(rotation_order) == 4:  # Assuming we have 4 sides to detect
+                if len(rotation_order) == 6:  # Assuming we have 6 tags to detect in one view
                     rotation_count += 1
                     rotation_order = []
 

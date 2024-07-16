@@ -3,16 +3,17 @@ import numpy as np
 class BoxPosition:
     def __init__(self, initial_positions=None):
         self.face_tags = {
-            'right': {'top': 0, 'bottom': 1},
-            'bottom': {'top': 24, 'bottom': 25},
-            'left': {'top': 2, 'bottom': 3},
-            'top': {'top': 4, 'bottom': 5}  # Currently not used
+            'right': {'top_left': 0, 'top_right': 1, 'bottom_left': 2, 'bottom_right': 3},
+            'bottom': {'top_left': 6, 'top_right': 7, 'bottom_left': 4, 'bottom_right': 5},
+            'left': {'top_left': 8, 'top_right': 9, 'bottom_left': 10, 'bottom_right': 11},
         }
         self.tag_relationships = {
-            1: 24,  # Bottom of the right face borders the top of the bottom face
-            25: 2,  # Bottom of the bottom face borders the top of the left face
-            3: 4,   # Bottom of the left face borders the top of the top face (currently not used)
-            5: 0,   # Bottom of the top face borders the top of the right face (currently not used)
+            3: 6,  # Bottom left of the right face borders the top left of the bottom face
+            2: 7,  # Bottom right of the right face borders the top right of the bottom face
+            5: 9,  # Bottom left of the bottom face borders the top left of the left face
+            4: 8,  # Bottom right of the bottom face borders the top right of the left face
+            0: 10, # Top left of the right face borders the bottom left of the left face
+            1: 11, # Top right of the right face borders the bottom right of the left face
         }
         self.initial_positions = initial_positions if initial_positions else {}
         self.rotation_order = []
