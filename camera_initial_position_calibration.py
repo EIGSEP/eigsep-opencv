@@ -43,8 +43,8 @@ def main():
 
     tag_detector = AprilTagDetector(camera_matrix, dist_coeffs)
     seen_tags = {}
-    rotation_count = 0
     rotation_order = []
+    rotation_count = 0
 
     while True:
         ret, frame = cap.read()

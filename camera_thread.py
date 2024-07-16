@@ -88,7 +88,7 @@ class DetectionThread(threading.Thread):
                         else:
                             dist_str = "Distance: N/A"
                             logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
-                    
+
                     logging.info(f"Current box position: {current_position}, Orientation: {current_orientation}")
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
                     
