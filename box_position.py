@@ -40,6 +40,8 @@ class BoxPosition:
                     self.rotation_count += np.sign(delta_orientation)
 
             self.previous_orientation = orientation_degrees
+        else:
+            orientation_degrees = None
 
         return avg_position, orientation_degrees
 
