@@ -45,7 +45,7 @@ class BoxPosition:
         else:
             relative_orientation = None
 
-        return avg_position, relative_orientation
+        return avg_position, orientation, relative_orientation
 
     def get_orientation_from_tags(self, detections):
         orientations = [d.orientation for d in detections if d.orientation is not None]

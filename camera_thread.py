@@ -75,7 +75,7 @@ class DetectionThread(threading.Thread):
                 frame = self.camera_thread.frame
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
-                current_position, current_orientation = self.box_position.calculate_orientation(positions_orientations)
+                current_position, old_orientation, relative_orientation = self.box_position.calculate_orientation(positions_orientations)
 
                 current_time = time.time()
                 if current_time - last_print_time >= self.print_delay:
@@ -89,9 +89,9 @@ class DetectionThread(threading.Thread):
                             dist_str = "Distance: N/A"
                             logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
 
-                    logging.info(f"Current box position: {current_position}, Orientation: {current_orientation}")
+                    logging.info(f"Current box position: {current_position}, Old Orientation: {old_orientation} degrees, Relative Orientation: {relative_orientation} degrees")
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
-                    
+
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
                     self.display_queue.put(frame_with_detections)
 
