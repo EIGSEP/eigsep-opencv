@@ -29,6 +29,8 @@ def get_next_run_number(base_dir):
 def parse_args():
     parser = argparse.ArgumentParser(description="AprilTag Box Position Detection")
     parser.add_argument("-l", "--live", action="store_true", help="Show live video feed")
+    parser.add_argument("-s", "--save", action="store_true", help="Save images with detections")
+    parser.add_argument("-d", "--data", action="store_true", help="Save output data from the run")
     parser.add_argument("-cal", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
     parser.add_argument("-con", "--config", type=str, default="config.json", help="Path to configuration file")
     parser.add_argument("-ip", "--initial_position", type=str, default="initial_camera_position.json", help="Path to initial camera position data")
@@ -60,6 +62,8 @@ def main():
 
     config = load_config(args.config)
     live = args.live if args.live is not None else config.get("live", False)
+    save = args.save or config.get("save", False)
+    save_data = args.data or config.get("save_data", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
@@ -113,7 +117,7 @@ def main():
     display_thread = DisplayThread(camera_thread, live, display_queue)
     display_thread.start()
 
-    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save=True, run_dir=run_image_dir, box_position=box_position)
+    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save, run_image_dir, box_position)
     detection_thread.start()
 
     run_data = []
@@ -121,24 +125,25 @@ def main():
     try:
         while True:
             time.sleep(0.1)
-            detections, _ = detector.detect(camera_thread.frame)
-            positions_orientations = detector.get_position_and_orientation(detections)
-            current_position, current_orientation = box_position.calculate_orientation(positions_orientations)
-            run_data_entry = {
-                'timestamp': datetime.now().isoformat(),
-                'detected_tags': [
-                    {
-                        'tag_id': tag_id,
-                        'position': position.tolist() if position is not None else None,
-                        'distance': np.linalg.norm(tvec) if tvec is not None else None,
-                        'orientation': orientation
-                    } for tag_id, position, tvec, orientation in positions_orientations
-                ],
-                'box_position': current_position.tolist() if current_position is not None else None,
-                'box_orientation': current_orientation,
-                'rotation_count': box_position.rotation_count
-            }
-            run_data.append(run_data_entry)
+            if save_data:
+                detections, _ = detector.detect(camera_thread.frame)
+                positions_orientations = detector.get_position_and_orientation(detections)
+                current_position, current_orientation = box_position.calculate_position(positions_orientations)
+                run_data_entry = {
+                    'timestamp': datetime.now().isoformat(),
+                    'detected_tags': [
+                        {
+                            'tag_id': tag_id,
+                            'position': position.tolist() if position is not None else None,
+                            'distance': np.linalg.norm(tvec) if tvec is not None else None,
+                            'orientation': orientation
+                        } for tag_id, position, tvec, orientation in positions_orientations
+                    ],
+                    'box_position': current_position.tolist() if current_position is not None else None,
+                    'box_orientation': current_orientation,
+                    'rotation_count': box_position.rotation_count
+                }
+                run_data.append(run_data_entry)
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
@@ -152,22 +157,24 @@ def main():
         camera_thread.join()
         cv2.destroyAllWindows()
 
-        user_input_images = input("Do you want to keep the saved images? (y/n): ").strip().lower()
-        if user_input_images == 'n':
-            logging.info("Deleting saved images...")
-            shutil.rmtree(run_image_dir)
-            logging.info("Images deleted.")
-        else:
-            logging.info(f"Images kept in {run_image_dir}")
+        if save:
+            user_input_images = input("Do you want to keep the saved images? (y/n): ").strip().lower()
+            if user_input_images == 'n':
+                logging.info("Deleting saved images...")
+                shutil.rmtree(run_image_dir)
+                logging.info("Images deleted.")
+            else:
+                logging.info(f"Images kept in {run_image_dir}")
 
-        user_input_data = input("Do you want to keep the saved run data? (y/n): ").strip().lower()
-        if user_input_data == 'n':
-            logging.info("Deleting saved run data...")
-            shutil.rmtree(run_data_dir)
-            logging.info("Run data deleted.")
-        else:
-            save_run_data(run_data, run_data_dir)
-            logging.info(f"Run data kept in {run_data_dir}")
+        if save_data:
+            data_path = save_run_data(run_data, run_data_dir)
+            user_input_data = input("Do you want to keep the saved run data? (y/n): ").strip().lower()
+            if user_input_data == 'n':
+                logging.info("Deleting saved run data...")
+                shutil.rmtree(run_data_dir)
+                logging.info("Run data deleted.")
+            else:
+                logging.info(f"Run data kept in {run_data_dir}")
 
 if __name__ == "__main__":
     main()
