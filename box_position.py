@@ -21,6 +21,7 @@ class BoxPosition:
     def determine_orientation(self, positions_orientations):
         #print(f"Inside determine_orientation, positions_orientations: {positions_orientations}")  # Debug print
         if len(positions_orientations) < 2:
+            print(len(positions_orientations))
             return None, None
 
         tag_positions = []
