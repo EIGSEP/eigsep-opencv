@@ -19,17 +19,18 @@ class BoxPosition:
         self.rotation_count = 0
 
     def determine_orientation(self, positions_orientations):
-        print(f"Inside determine_orientation, positions_orientations: {positions_orientations}")  # Debug print
+        #print(f"Inside determine_orientation, positions_orientations: {positions_orientations}")  # Debug print
         if len(positions_orientations) < 2:
             return None, None
 
         tag_positions = []
         for _, pos, _, _ in positions_orientations:
+            print(pos)
             if pos is not None:
                 tag_positions.append(pos)
 
         tag_positions = np.array(tag_positions)
-        print(f"tag_positions: {tag_positions}")  # Debug print
+        #print(f"tag_positions: {tag_positions}")  # Debug print
 
         if tag_positions.size == 0:  # Ensure there are valid positions
             return None, None
@@ -39,7 +40,7 @@ class BoxPosition:
         return avg_position, orientation
 
     def calculate_orientation(self, positions_orientations):
-        print(f"Inside calculate_orientation, positions_orientations: {positions_orientations}")  # Debug print
+        #print(f"Inside calculate_orientation, positions_orientations: {positions_orientations}")  # Debug print
         avg_position, orientation = self.determine_orientation(positions_orientations)
         orientation_degrees = None
         relative_orientation = None
