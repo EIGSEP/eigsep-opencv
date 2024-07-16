@@ -33,6 +33,9 @@ class BoxPosition:
 
     def calculate_orientation(self, positions_orientations):
         avg_position, orientation = self.determine_orientation(positions_orientations)
+        orientation_degrees = None
+        relative_orientation = None
+
         if orientation is not None:
             orientation_degrees = np.degrees(orientation)
             if orientation_degrees < 0:
@@ -42,10 +45,8 @@ class BoxPosition:
                 relative_orientation = (orientation_degrees - initial_orientation) % 360
             else:
                 relative_orientation = orientation_degrees
-        else:
-            relative_orientation = None
 
-        return avg_position, orientation, relative_orientation
+        return avg_position, orientation_degrees, relative_orientation
 
     def get_orientation_from_tags(self, detections):
         orientations = [d.orientation for d in detections if d.orientation is not None]

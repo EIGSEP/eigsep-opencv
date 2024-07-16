@@ -89,7 +89,11 @@ class DetectionThread(threading.Thread):
                             dist_str = "Distance: N/A"
                             logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
 
-                    logging.info(f"Current box position: {current_position}, Old Orientation: {old_orientation} degrees, Relative Orientation: {relative_orientation} degrees")
+                    if current_position is not None:
+                        logging.info(f"Current box position: {current_position}, Old Orientation: {old_orientation} degrees, Relative Orientation: {relative_orientation} degrees")
+                    else:
+                        logging.info(f"Current box position: N/A, Old Orientation: N/A, Relative Orientation: N/A")
+
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
 
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
