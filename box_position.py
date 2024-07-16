@@ -24,7 +24,7 @@ class BoxPosition:
             return None, None
 
         tag_positions = np.array([pos for _, pos, _, _ in positions_orientations if pos is not None])
-        print(tag_positions.shape[0]))
+        print(tag_positions.shape[0])
         if tag_positions.shape[0] < 2:
             return None, None
 
