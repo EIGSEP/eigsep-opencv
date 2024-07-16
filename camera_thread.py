@@ -7,24 +7,20 @@ import logging
 import numpy as np
 
 class CameraThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, camera_index=0):
         threading.Thread.__init__(self)
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(camera_index)
         self.ret = False
         self.frame = None
-        self.running = True
         self.frame_ready = threading.Event()
+        self.running = True
 
     def run(self):
         while self.running:
-            ret, frame = self.cap.read()
-            if ret:
-                self.frame = frame
-                self.ret = ret
+            self.ret, self.frame = self.cap.read()
+            if self.ret:
                 self.frame_ready.set()
-            else:
-                self.ret = False
-                self.frame_ready.clear()
+            time.sleep(0.01)
 
     def stop(self):
         self.running = False
