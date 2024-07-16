@@ -89,10 +89,10 @@ class DetectionThread(threading.Thread):
                             dist_str = "Distance: N/A"
                             logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
 
-                    if current_position is not None:
+                    if current_position is not None and old_orientation is not None and relative_orientation is not None:
                         logging.info(f"Current box position: {current_position}, Old Orientation: {old_orientation} degrees, Relative Orientation: {relative_orientation} degrees")
                     else:
-                        logging.info(f"Current box position: N/A, Old Orientation: N/A, Relative Orientation: N/A")
+                        logging.info(f"Current box position: {current_position if current_position is not None else 'N/A'}, Old Orientation: {old_orientation if old_orientation is not None else 'N/A'}, Relative Orientation: {relative_orientation if relative_orientation is not None else 'N/A'}")
 
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
 
