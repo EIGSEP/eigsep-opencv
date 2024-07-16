@@ -20,10 +20,10 @@ class BoxPosition:
 
     def determine_orientation(self, positions_orientations):
         # Calculate the orientation of the box using the positions of the detected tags
+        print(positions_orientations)
         if len(positions_orientations) < 2:
             return None, None
 
-        print(positions_orientations)
         tag_positions = np.array([pos for _, pos, _, _ in positions_orientations if pos is not None])
         #print(tag_positions.shape[0])
         if tag_positions.shape[0] < 2:
