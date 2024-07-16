@@ -128,7 +128,7 @@ def main():
             if save_data:
                 detections, _ = detector.detect(camera_thread.frame)
                 positions_orientations = detector.get_position_and_orientation(detections)
-                current_position, current_orientation = box_position.calculate_position(positions_orientations)
+                current_position, current_orientation = box_position.calculate_orientation(positions_orientations)
                 run_data_entry = {
                     'timestamp': datetime.now().isoformat(),
                     'detected_tags': [

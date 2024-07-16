@@ -18,66 +18,25 @@ class BoxPosition:
         self.rotation_order = []
         self.rotation_count = 0
 
-    def determine_position(self, detections):
-        detected_faces = set()
-        for detection in detections:
-            tag_id = detection.tag_id
-            for face, tags in self.face_tags.items():
-                if tag_id in tags.values():
-                    detected_faces.add(face)
-                    if tag_id not in self.rotation_order:
-                        self.rotation_order.append(tag_id)
+    def determine_orientation(self, positions_orientations):
+        # Calculate the orientation of the box using the positions of the detected tags
+        if len(positions_orientations) < 2:
+            return None, None
 
-                    if len(self.rotation_order) == 4:  # Assuming we have 4 sides to detect
-                        self.rotation_count += 1
-                        self.rotation_order = []
-        return detected_faces
+        tag_positions = np.array([pos for _, pos, _, _ in positions_orientations if pos is not None])
+        if tag_positions.shape[0] < 2:
+            return None, None
 
-    def calculate_position(self, positions_orientations):
+        avg_position = np.mean(tag_positions, axis=0)
+        orientation = np.arctan2(avg_position[1], avg_position[0])
+        return avg_position, orientation
+
+    def calculate_orientation(self, positions_orientations):
         if not self.initial_positions:
             return None, None
 
-        positions = []
-        orientations = []
-        for tag_id, position, tvec, orientation in positions_orientations:
-            if position is not None:
-                positions.append(position)
-                orientations.append(orientation)
-
-                # Update initial positions with new tags
-                if tag_id not in self.initial_positions:
-                    self.initial_positions[tag_id] = {
-                        'position': position.tolist(),
-                        'distance': np.linalg.norm(tvec) if tvec is not None else None,
-                        'orientation': orientation
-                    }
-
-        if positions:
-            avg_position = np.mean(positions, axis=0)
-            avg_orientation = np.mean(orientations) if orientations else None
-            return avg_position, avg_orientation
-        else:
-            return None, None
-
-    def get_position_from_tag(self, face, tag_id, distance, orientation):
-        # Simplified example, would need real calculations based on tag and face layout
-        x, y, z = 0, 0, 0
-        if face == 'right':
-            if tag_id == self.face_tags[face]['top']:
-                y = distance
-            elif tag_id == self.face_tags[face]['bottom']:
-                y = -distance
-        elif face == 'bottom':
-            if tag_id == self.face_tags[face]['top']:
-                x = distance
-            elif tag_id == self.face_tags[face]['bottom']:
-                x = -distance
-        elif face == 'left':
-            if tag_id == self.face_tags[face]['top']:
-                y = distance
-            elif tag_id == self.face_tags[face]['bottom']:
-                y = -distance
-        return np.array([x, y, z])
+        avg_position, orientation = self.determine_orientation(positions_orientations)
+        return avg_position, orientation
 
     def get_orientation_from_tags(self, detections):
         orientations = [d.orientation for d in detections if d.orientation is not None]
