@@ -8,6 +8,12 @@ class BoxPosition:
             'left': {'top': 2, 'bottom': 3},
             'top': {'top': 4, 'bottom': 5}  # Currently not used
         }
+        self.tag_relationships = {
+            1: 24,  # Bottom of the right face borders the top of the bottom face
+            25: 2,  # Bottom of the bottom face borders the top of the left face
+            3: 4,   # Bottom of the left face borders the top of the top face (currently not used)
+            5: 0,   # Bottom of the top face borders the top of the right face (currently not used)
+        }
         self.initial_positions = initial_positions if initial_positions else {}
         self.rotation_count = 0
         self.previous_orientation = None
@@ -45,10 +51,11 @@ class BoxPosition:
 
         return avg_position, orientation_degrees
 
-    def get_orientation_from_tags(self, detections):
-        orientations = [d.orientation for d in detections if d.orientation is not None]
-        if orientations:
-            avg_orientation = np.mean(orientations)
-            return avg_orientation
-        else:
-            return None
+    def determine_position(self, detections):
+        detected_faces = set()
+        for detection in detections:
+            tag_id = detection.tag_id
+            for face, tags in self.face_tags.items():
+                if tag_id in tags.values():
+                    detected_faces.add(face)
+        return detected_faces

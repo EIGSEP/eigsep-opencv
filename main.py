@@ -122,6 +122,8 @@ def main():
         while True:
             time.sleep(0.1)
             detections, _ = detector.detect(camera_thread.frame)
+            if detections is None:
+                continue
             positions_orientations = detector.get_position_and_orientation(detections)
             current_position, current_orientation = box_position.calculate_orientation(positions_orientations)
             run_data_entry = {

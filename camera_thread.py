@@ -73,6 +73,8 @@ class DetectionThread(threading.Thread):
         while self.running:
             if self.camera_thread.frame_ready.wait(1):
                 frame = self.camera_thread.frame
+                if frame is None:
+                    continue
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
                 current_position, current_orientation = self.box_position.calculate_orientation(positions_orientations)
@@ -109,4 +111,3 @@ class DetectionThread(threading.Thread):
 
     def stop(self):
         self.running = False
-    
