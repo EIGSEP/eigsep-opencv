@@ -77,8 +77,6 @@ class DetectionThread(threading.Thread):
         while self.running:
             if self.camera_thread.frame_ready.wait(1):
                 frame = self.camera_thread.frame
-                if frame is None:
-                    continue
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
                 current_position, current_orientation = self.box_position.calculate_orientation(positions_orientations)
@@ -95,11 +93,7 @@ class DetectionThread(threading.Thread):
                             dist_str = "Distance: N/A"
                             logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
                     
-                    if current_orientation is not None:
-                        logging.info(f"Current box position: {current_position}, Orientation: {current_orientation:.2f} degrees")
-                    else:
-                        logging.info(f"Current box position: {current_position}, Orientation: N/A")
-                    
+                    logging.info(f"Current box position: {current_position}, Orientation: {current_orientation}")
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
                     
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
