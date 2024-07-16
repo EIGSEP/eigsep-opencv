@@ -34,7 +34,7 @@ class BoxPosition:
         return avg_position, orientation
 
     def calculate_orientation(self, positions_orientations):
-        #print(positions_orientations)
+        print(positions_orientations)
         avg_position, orientation = self.determine_orientation(positions_orientations)
         orientation_degrees = None
         relative_orientation = None
