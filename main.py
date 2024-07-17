@@ -59,8 +59,8 @@ def main():
 
     config = load_config(args.config)
     live = args.live if args.live is not None else config.get("live", False)
-    save = False
-    save_data = True
+    save = True
+    save_data = False
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
