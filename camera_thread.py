@@ -108,3 +108,4 @@ class DetectionThread(threading.Thread):
 
     def stop(self):
         self.running = False
+        
