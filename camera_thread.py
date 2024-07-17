@@ -56,12 +56,13 @@ class DisplayThread(threading.Thread):
         self.running = False
 
 class DetectionThread(threading.Thread):
-    def __init__(self, camera_thread, detector, display_queue, print_delay, run_dir, box_position):
+    def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir, box_position):
         threading.Thread.__init__(self)
         self.camera_thread = camera_thread
         self.detector = detector
         self.display_queue = display_queue
         self.print_delay = print_delay
+        self.save = save
         self.run_dir = run_dir
         self.box_position = box_position
         self.running = True
@@ -75,8 +76,6 @@ class DetectionThread(threading.Thread):
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
                 current_position, old_orientation, relative_orientation = self.box_position.calculate_orientation(positions_orientations)
-                #print(current_position)
-
                 current_time = time.time()
                 if current_time - last_print_time >= self.print_delay:
                     for tag_id, position, tvec, orientation in positions_orientations:
@@ -99,11 +98,11 @@ class DetectionThread(threading.Thread):
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
                     self.display_queue.put(frame_with_detections)
 
-                
-                    image_path = os.path.join(self.run_dir, f'apriltag_detection_{self.image_count}.png')
-                    cv2.imwrite(image_path, frame_with_detections)
-                    logging.info(f"Saved image: {image_path}")
-                    self.image_count += 1
+                    if self.save:
+                        image_path = os.path.join(self.run_dir, f'apriltag_detection_{self.image_count}.png')
+                        cv2.imwrite(image_path, frame_with_detections)
+                        logging.info(f"Saved image: {image_path}")
+                        self.image_count += 1
 
                     last_print_time = current_time
 
