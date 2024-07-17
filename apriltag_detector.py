@@ -1,12 +1,12 @@
 import cv2
-import apriltag
 import numpy as np
+import time
 
 class AprilTagDetector:
-    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.080, zoom=1.0):
+    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.0275):
         self.camera_matrix = camera_matrix
         self.dist_coeffs = dist_coeffs
-        self.tag_size = tag_size * zoom  # Adjust the tag size by the zoom factor
+        self.tag_size = tag_size
         self.detector = apriltag.Detector()
 
     def detect(self, frame):
@@ -56,4 +56,38 @@ class AprilTagDetector:
             cv2.putText(frame, tag_id, center, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
         return frame
+
+def apply_digital_zoom(frame, zoom_factor):
+    height, width = frame.shape[:2]
+    new_height, new_width = int(height / zoom_factor), int(width / zoom_factor)
+    top, left = (height - new_height) // 2, (width - new_width) // 2
+    cropped_frame = frame[top:top+new_height, left:left+new_width]
+    zoomed_frame = cv2.resize(cropped_frame, (width, height), interpolation=cv2.INTER_LINEAR)
+    return zoomed_frame
+
+# Example usage in your detection loop
+zoom_factor = 2  # Change this value to your desired zoom level
+
+cap = cv2.VideoCapture(0)  # Open the camera
+tag_detector = AprilTagDetector()  # Initialize your AprilTag detector
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
     
+    # Apply digital zoom
+    frame = apply_digital_zoom(frame, zoom_factor)
+    
+    # Continue with your detection logic
+    detections, gray_frame = tag_detector.detect(frame)
+    frame_with_detections = tag_detector.draw_detections(frame, detections)
+    
+    # Display the frame with detections
+    cv2.imshow('AprilTag Detection with Zoom', frame_with_detections)
+    
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
