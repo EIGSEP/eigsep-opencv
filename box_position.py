@@ -30,7 +30,7 @@ class BoxPosition:
         self.rotation_count = 0
 
     def determine_orientation(self, positions_orientations):
-        if len(positions_orientations) < 2:
+        if len(positions_orientations) == 0:
             return None, None
 
         tag_positions = []
@@ -59,12 +59,6 @@ class BoxPosition:
             orientation_degrees = np.degrees(orientation)
             if orientation_degrees < 0:
                 orientation_degrees += 360
-            if self.initial_positions:
-                initial_orientation = self.initial_positions.get('orientation', 180)
-                relative_orientation = (orientation_degrees - initial_orientation) % 360
-            else:
-                relative_orientation = orientation_degrees
-
         # Calculate relative orientation based on detected tags
         relative_orientation = self.calculate_relative_orientation(positions_orientations)
 
