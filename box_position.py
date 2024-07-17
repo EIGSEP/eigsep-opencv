@@ -30,6 +30,7 @@ class BoxPosition:
         self.rotation_count = 0
 
     def determine_orientation(self, positions_orientations):
+        print(positions_orientations)
         if len(positions_orientations) == 0:
             return None, None
 
