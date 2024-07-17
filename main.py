@@ -63,6 +63,7 @@ def main():
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
     print_delay = config.get("print_delay", 2)
+    zoom = config.get("zoom", 1.0)  # Get the zoom factor from config
 
     # Load camera calibration data
     if os.path.exists(calibration_path):
@@ -93,7 +94,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     logging.info("Creating AprilTag detector...")
-    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size)
+    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size, zoom)
     box_position = BoxPosition(initial_positions)  # Assuming BoxPosition takes initial_positions as an argument
 
     # Create subdirectories for this run
@@ -120,12 +121,14 @@ def main():
     try:
         while True:
             time.sleep(0.1)
-            if save_data:
-                current_position, current_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
-                run_data.append({
-                    'position': current_position.tolist() if current_position is not None else None,
-                    'orientation': current_orientation
-                })
+            detections = detector.detect(camera_thread.frame)[0]
+            current_position, current_orientation, relative_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detections))
+
+            run_data.append({
+                'position': current_position.tolist() if current_position is not None else None,
+                'orientation': current_orientation,
+                'relative_orientation': relative_orientation
+            })
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
@@ -147,14 +150,12 @@ def main():
         else:
             logging.info(f"Images kept in {run_image_dir}")
 
-        data_path = save_run_data(run_data, run_data_dir)
         user_input_data = input("Do you want to keep the saved run data? (y/n): ").strip().lower()
-        if user_input_data == 'n':
-            logging.info("Deleting saved run data...")
-            os.remove(data_path)
-            logging.info("Run data deleted.")
-        else:
+        if user_input_data == 'y':
+            data_path = save_run_data(run_data, run_data_dir)
             logging.info(f"Run data kept in {data_path}")
+        else:
+            logging.info("Run data not saved.")
 
 if __name__ == "__main__":
     main()
