@@ -71,6 +71,7 @@ class DetectionThread(threading.Thread):
         self.running = True
         self.image_count = 0
         self.run_data = []
+        self.last_save_time = time.time()
 
     def run(self):
         last_print_time = time.time()
