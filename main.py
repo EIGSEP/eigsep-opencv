@@ -121,8 +121,7 @@ def main():
     try:
         while True:
             time.sleep(0.1)
-            detections = detector.detect(camera_thread.frame)[0]
-            current_position, current_orientation, relative_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detections))
+            current_position, current_orientation, relative_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
 
             run_data.append({
                 'position': current_position.tolist() if current_position is not None else None,
