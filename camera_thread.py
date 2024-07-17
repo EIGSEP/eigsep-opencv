@@ -56,13 +56,12 @@ class DisplayThread(threading.Thread):
         self.running = False
 
 class DetectionThread(threading.Thread):
-    def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir, box_position):
+    def __init__(self, camera_thread, detector, display_queue, print_delay, run_dir, box_position):
         threading.Thread.__init__(self)
         self.camera_thread = camera_thread
         self.detector = detector
         self.display_queue = display_queue
         self.print_delay = print_delay
-        self.save = save
         self.run_dir = run_dir
         self.box_position = box_position
         self.running = True
@@ -97,12 +96,10 @@ class DetectionThread(threading.Thread):
 
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
                     self.display_queue.put(frame_with_detections)
-
-                    if self.save:
-                        image_path = os.path.join(self.run_dir, f'apriltag_detection_{self.image_count}.png')
-                        cv2.imwrite(image_path, frame_with_detections)
-                        logging.info(f"Saved image: {image_path}")
-                        self.image_count += 1
+                    image_path = os.path.join(self.run_dir, f'apriltag_detection_{self.image_count}.png')
+                    cv2.imwrite(image_path, frame_with_detections)
+                    logging.info(f"Saved image: {image_path}")
+                    self.image_count += 1
 
                     last_print_time = current_time
 
