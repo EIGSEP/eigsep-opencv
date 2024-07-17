@@ -28,8 +28,6 @@ def get_next_run_number(base_dir):
 def parse_args():
     parser = argparse.ArgumentParser(description="AprilTag Box Position Detection")
     parser.add_argument("-l", "--live", action="store_true", help="Show live video feed")
-    parser.add_argument("-s", "--save", action="store_true", help="Save images with detections")
-    parser.add_argument("-d", "--data", action="store_true", help="Save output data from the run")
     parser.add_argument("-cal", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
     parser.add_argument("-con", "--config", type=str, default="config.json", help="Path to configuration file")
     parser.add_argument("-ip", "--initial_position", type=str, default="initial_camera_position.json", help="Path to initial camera position data")
@@ -61,12 +59,11 @@ def main():
 
     config = load_config(args.config)
     live = args.live if args.live is not None else config.get("live", False)
-    save = args.save or config.get("save", False)
-    save_data = args.data or config.get("save_data", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
     print_delay = config.get("print_delay", 2)
+    zoom = config.get("zoom", 1.0)  # Get the zoom factor from config
 
     # Load camera calibration data
     if os.path.exists(calibration_path):
@@ -97,7 +94,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     logging.info("Creating AprilTag detector...")
-    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size)
+    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size, zoom)
     box_position = BoxPosition(initial_positions)  # Assuming BoxPosition takes initial_positions as an argument
 
     # Create subdirectories for this run
@@ -116,7 +113,7 @@ def main():
     display_thread = DisplayThread(camera_thread, live, display_queue)
     display_thread.start()
 
-    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save, run_image_dir, box_position)
+    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, True, run_image_dir, box_position)
     detection_thread.start()
 
     run_data = []
@@ -124,12 +121,11 @@ def main():
     try:
         while True:
             time.sleep(0.1)
-            if save_data:
-                current_position, current_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
-                run_data.append({
-                    'position': current_position.tolist() if current_position is not None else None,
-                    'orientation': current_orientation
-                })
+            current_position, current_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
+            run_data.append({
+                'position': current_position.tolist() if current_position is not None else None,
+                'orientation': current_orientation
+            })
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
@@ -143,24 +139,20 @@ def main():
         camera_thread.join()
         cv2.destroyAllWindows()
 
-        if save:
-            user_input_images = input("Do you want to keep the saved images? (y/n): ").strip().lower()
-            if user_input_images == 'n':
-                logging.info("Deleting saved images...")
-                shutil.rmtree(run_image_dir)
-                logging.info("Images deleted.")
-            else:
-                logging.info(f"Images kept in {run_image_dir}")
+        user_input_images = input("Do you want to keep the saved images? (y/n): ").strip().lower()
+        if user_input_images == 'n':
+            logging.info("Deleting saved images...")
+            shutil.rmtree(run_image_dir)
+            logging.info("Images deleted.")
+        else:
+            logging.info(f"Images kept in {run_image_dir}")
 
-        if save_data:
+        user_input_data = input("Do you want to keep the saved run data? (y/n): ").strip().lower()
+        if user_input_data == 'y':
             data_path = save_run_data(run_data, run_data_dir)
-            user_input_data = input("Do you want to keep the saved run data? (y/n): ").strip().lower()
-            if user_input_data == 'n':
-                logging.info("Deleting saved run data...")
-                os.remove(data_path)
-                logging.info("Run data deleted.")
-            else:
-                logging.info(f"Run data kept in {data_path}")
+            logging.info(f"Run data kept in {data_path}")
+        else:
+            logging.info("Run data not saved.")
 
 if __name__ == "__main__":
     main()
