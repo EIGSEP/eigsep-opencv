@@ -61,7 +61,6 @@ class BoxPosition:
                 orientation_degrees += 360
         # Calculate relative orientation based on detected tags
         relative_orientation = self.calculate_relative_orientation(positions_orientations)
-        #relative_orientation = orientation_degrees
 
         return avg_position, orientation_degrees, relative_orientation
 
