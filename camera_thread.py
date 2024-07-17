@@ -99,7 +99,7 @@ class DetectionThread(threading.Thread):
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
                     self.display_queue.put(frame_with_detections)
-                    
+
                     if self.save:
                         image_path = os.path.join(self.run_dir, f'apriltag_detection_{self.image_count}.png')
                         cv2.imwrite(image_path, frame_with_detections)
@@ -110,11 +110,14 @@ class DetectionThread(threading.Thread):
                         self.run_data.append({
                             'position': current_position.tolist() if current_position is not None else None,
                             'orientation': current_orientation,
-                            'relative_orientation': relative_orientation,
                             'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
                         })
 
-                    last_print_time = current_time
+                        if current_time - self.last_save_time >= 60:  # Save data every minute
+                            self.save_run_data()
+                            self.last_save_time = current_time
+                            self.run_data = []  # Clear the data to start fresh
+                        last_print_time = current_time
 
     def stop(self):
         self.running = False
@@ -125,3 +128,4 @@ class DetectionThread(threading.Thread):
         with open(data_path, 'w') as file:
             json.dump(self.run_data, file)
         logging.info(f"Saved run data: {data_path}")
+        self.run_data = []  # Clear the data to start fresh
