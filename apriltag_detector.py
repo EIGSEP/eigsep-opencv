@@ -3,10 +3,10 @@ import apriltag
 import numpy as np
 
 class AprilTagDetector:
-    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.0275, zoom=1.0):
+    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.0275):
         self.camera_matrix = camera_matrix
         self.dist_coeffs = dist_coeffs
-        self.tag_size = tag_size * zoom  # Adjust the tag size by the zoom factor
+        self.tag_size = tag_size
         self.detector = apriltag.Detector()
 
     def detect(self, frame):
@@ -56,4 +56,3 @@ class AprilTagDetector:
             cv2.putText(frame, tag_id, center, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
         return frame
-    

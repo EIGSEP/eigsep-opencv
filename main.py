@@ -59,8 +59,8 @@ def main():
 
     config = load_config(args.config)
     live = args.live if args.live is not None else config.get("live", False)
-    save = True
-    save_data = True
+    save = args.save or config.get("save", False)
+    save_data = args.data or config.get("save_data", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.1)  # Default tag size to 0.1 meters if not in config
@@ -123,11 +123,10 @@ def main():
         while True:
             time.sleep(0.1)
             if save_data:
-                current_position, current_orientation, relative_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
+                current_position, current_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
                 run_data.append({
                     'position': current_position.tolist() if current_position is not None else None,
-                    'orientation': current_orientation,
-                    'relative_orientation': relative_orientation
+                    'orientation': current_orientation
                 })
 
     except KeyboardInterrupt:

@@ -7,7 +7,7 @@ import argparse
 from camera_thread import CameraThread
 
 def load_config(config_path='config.json'):
-    if os.path.exists(config_path):
+    if (os.path.exists(config_path)):
         with open(config_path, 'r') as file:
             config = json.load(file)
         print(f"Loaded configuration from {config_path}.")
@@ -16,13 +16,12 @@ def load_config(config_path='config.json'):
             "chessboard_size": [9, 6],
             "square_size": 20,
             "num_images": 30,
-            "live": True,
-            "zoom": 1.0  # Default zoom value
+            "live": True
         }
         print(f"Configuration file {config_path} not found. Using default settings.")
     return config
 
-def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), zoom=1.0, live=False):
+def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), live=False):
     camera_thread = CameraThread()
     camera_thread.start()
 
@@ -35,26 +34,17 @@ def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), zoom=1.0, li
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     try:
-        while image_count < num_images:
+        while (image_count < num_images):
             if camera_thread.frame_ready.wait(1):
                 frame = camera_thread.frame
-
-                # Apply zoom factor
-                if zoom != 1.0:
-                    height, width = frame.shape[:2]
-                    new_size = (int(width * zoom), int(height * zoom))
-                    frame = cv.resize(frame, new_size)
-                    frame = frame[(new_size[1] - height) // 2:(new_size[1] + height) // 2,
-                                  (new_size[0] - width) // 2:(new_size[0] + width) // 2]
-
                 gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
                 ret, corners = cv.findChessboardCorners(gray, chessboard_size, None)
 
-                if ret:
+                if (ret):
                     corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     cv.drawChessboardCorners(frame, chessboard_size, corners2, ret)
 
-                    if live:
+                    if (live):
                         cv.imshow('Chessboard', frame)
                         cv.waitKey(1)
 
@@ -67,9 +57,9 @@ def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), zoom=1.0, li
                     image_count += 1
                 else:
                     print(f"Chessboard not detected in image {image_count + 1}")
-                    if live:
+                    if (live):
                         cv.imshow('Chessboard', frame)
-                        if cv.waitKey(1) & 0xFF == ord('q'):
+                        if (cv.waitKey(1) & 0xFF == ord('q')):
                             break
 
     except KeyboardInterrupt:
@@ -78,13 +68,13 @@ def capture_images(save_dir, num_images=30, chessboard_size=(9, 6), zoom=1.0, li
         camera_thread.stop()
         cv.destroyAllWindows()
 
-def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=20, zoom=1.0):
+def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=20):
     # termination criteria
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     # prepare object points
     objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
-    objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2) * square_size * zoom
+    objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2) * square_size
 
     # Arrays to store object points and image points from all the images.
     objpoints = []  # 3d point in real world space
@@ -95,7 +85,7 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=20, zoom=1.0
 
     for fname in images:
         img = cv.imread(fname)
-        if img is None:
+        if (img is None):
             print(f"Failed to load image {fname}")
             continue
 
@@ -107,7 +97,7 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=20, zoom=1.0
         # Find the chess board corners
         ret, corners = cv.findChessboardCorners(gray, chessboard_size, None)
 
-        if ret:
+        if (ret):
             objpoints.append(objp)
             corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
             imgpoints.append(corners2)
@@ -121,7 +111,7 @@ def calibrate_camera(image_dir, chessboard_size=(9, 6), square_size=20, zoom=1.0
 
     cv.destroyAllWindows()
 
-    if len(objpoints) > 0 and len(imgpoints) > 0:
+    if (len(objpoints) > 0 and len(imgpoints) > 0):
         print(f"Number of valid images: {len(objpoints)}")
         ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
         print(f"Calibration reprojection error: {ret}")
@@ -140,17 +130,16 @@ def main():
     save_dir = 'calibration_images'
     chessboard_size = tuple(config.get("chessboard_size", [9, 6]))
     num_images = config.get("num_images", 30)
-    square_size = config.get("square_size", 20)  # Default to 20mm
-    zoom = config.get("zoom", 1.0)  # Get the zoom factor from config
+    square_size = config.get("square_size", 20)  # Default to 40mm
 
     live = args.live if args.live is not None else False
 
-    capture_images(save_dir, num_images, chessboard_size, zoom=zoom, live=live)
+    capture_images(save_dir, num_images, chessboard_size, live=live)
 
     print("Calibrating camera...")
-    camera_matrix, dist_coeffs, rvecs, tvecs, error = calibrate_camera(save_dir, chessboard_size, square_size, zoom=zoom)
+    camera_matrix, dist_coeffs, rvecs, tvecs, error = calibrate_camera(save_dir, chessboard_size, square_size)
 
-    if camera_matrix is not None and dist_coeffs is not None:
+    if (camera_matrix is not None and dist_coeffs is not None):
         print("Camera calibration complete.")
         print("Camera matrix:")
         print(camera_matrix)
