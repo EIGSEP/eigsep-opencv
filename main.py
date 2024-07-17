@@ -121,10 +121,14 @@ def main():
     try:
         while True:
             time.sleep(0.1)
-            current_position, current_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
+            detections = detector.detect(camera_thread.frame)[0]
+            current_position, current_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detections))
+            relative_orientation = box_position.calculate_relative_orientation(detections)
+
             run_data.append({
                 'position': current_position.tolist() if current_position is not None else None,
-                'orientation': current_orientation
+                'orientation': current_orientation,
+                'relative_orientation': relative_orientation
             })
 
     except KeyboardInterrupt:
