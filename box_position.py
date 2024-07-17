@@ -60,11 +60,12 @@ class BoxPosition:
             if orientation_degrees < 0:
                 orientation_degrees += 360
         # Calculate relative orientation based on detected tags
-        relative_orientation = self.calculate_relative_orientation(positions_orientations)
+        #relative_orientation = self.calculate_relative_orientation(positions_orientations)
+        relative_orientation = orientation_degrees
 
         return avg_position, orientation_degrees, relative_orientation
 
-    def calculate_relative_orientation(self, positions_orientations):
+    """def calculate_relative_orientation(self, positions_orientations):
         if not self.initial_positions:
             return None
 
@@ -99,7 +100,7 @@ class BoxPosition:
                     relative_orientation = (self.initial_positions[related_tag]['orientation'] + angle + angle_between_degrees) % 360
                     break
 
-        return relative_orientation
+        return relative_orientation"""
 
     def get_orientation_from_tags(self, detections):
         orientations = [d.orientation for d in detections if d.orientation is not None]
