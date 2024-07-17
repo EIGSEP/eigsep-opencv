@@ -47,23 +47,6 @@ class BoxPosition:
         orientation = np.arctan2(avg_position[1], avg_position[0])
         return avg_position, orientation
 
-    def calculate_orientation(self, positions_orientations):
-        if not self.initial_positions:
-            return None, None, None
-
-        avg_position, orientation = self.determine_orientation(positions_orientations)
-        orientation_degrees = None
-        relative_orientation = None
-
-        if orientation is not None:
-            orientation_degrees = np.degrees(orientation)
-            if orientation_degrees < 0:
-                orientation_degrees += 360
-        # Calculate relative orientation based on detected tags
-        relative_orientation = self.calculate_relative_orientation(positions_orientations)
-
-        return avg_position, orientation_degrees, relative_orientation
-
     def calculate_relative_orientation(self, positions_orientations):
         if not self.initial_positions:
             return None
