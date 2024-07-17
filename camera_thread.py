@@ -4,6 +4,7 @@ import cv2
 import queue
 import os
 import logging
+import json
 import numpy as np
 
 class CameraThread(threading.Thread):
@@ -56,7 +57,7 @@ class DisplayThread(threading.Thread):
         self.running = False
 
 class DetectionThread(threading.Thread):
-    def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir, box_position):
+    def __init__(self, camera_thread, detector, display_queue, print_delay, save, run_dir, save_data, data_dir, box_position):
         threading.Thread.__init__(self)
         self.camera_thread = camera_thread
         self.detector = detector
@@ -64,9 +65,12 @@ class DetectionThread(threading.Thread):
         self.print_delay = print_delay
         self.save = save
         self.run_dir = run_dir
+        self.save_data = save_data
+        self.data_dir = data_dir
         self.box_position = box_position
         self.running = True
         self.image_count = 0
+        self.run_data = []
 
     def run(self):
         last_print_time = time.time()
@@ -75,7 +79,8 @@ class DetectionThread(threading.Thread):
                 frame = self.camera_thread.frame
                 detections, undistorted_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
-                current_position, old_orientation, relative_orientation = self.box_position.calculate_orientation(positions_orientations)
+                current_position, current_orientation = self.box_position.calculate_orientation(positions_orientations)
+
                 current_time = time.time()
                 if current_time - last_print_time >= self.print_delay:
                     for tag_id, position, tvec, orientation in positions_orientations:
@@ -87,14 +92,10 @@ class DetectionThread(threading.Thread):
                         else:
                             dist_str = "Distance: N/A"
                             logging.info(f"Tag ID: {tag_id}, {pos_str}, {dist_str}")
-
-                    if current_position is not None:
-                        logging.info(f"Current box position: {current_position}, Old Orientation: {old_orientation} degrees, Relative Orientation: {relative_orientation} degrees")
-                    else:
-                        logging.info(f"Current box position: N/A, Old Orientation: N/A, Relative Orientation: N/A")
-
+                    
+                    logging.info(f"Current box position: {current_position}, Orientation: {current_orientation}")
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
-
+                    
                     frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
                     self.display_queue.put(frame_with_detections)
 
@@ -104,8 +105,21 @@ class DetectionThread(threading.Thread):
                         logging.info(f"Saved image: {image_path}")
                         self.image_count += 1
 
+                    if self.save_data:
+                        self.run_data.append({
+                            'position': current_position.tolist() if current_position is not None else None,
+                            'orientation': current_orientation,
+                            'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
+                        })
+
                     last_print_time = current_time
 
     def stop(self):
         self.running = False
-        
+        self.save_run_data()
+
+    def save_run_data(self):
+        data_path = os.path.join(self.data_dir, 'run_data.json')
+        with open(data_path, 'w') as file:
+            json.dump(self.run_data, file)
+        logging.info(f"Saved run data: {data_path}")

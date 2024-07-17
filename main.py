@@ -114,7 +114,7 @@ def main():
     display_thread = DisplayThread(camera_thread, live, display_queue)
     display_thread.start()
 
-    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save, run_image_dir, box_position)
+    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save, run_image_dir, save_data, run_data_dir, box_position)
     detection_thread.start()
 
     run_data = []
@@ -122,13 +122,6 @@ def main():
     try:
         while True:
             time.sleep(0.1)
-            if save_data:
-                current_position, current_orientation, relative_orientation = box_position.calculate_orientation(detector.get_position_and_orientation(detector.detect(camera_thread.frame)[0]))
-                run_data.append({
-                    'position': current_position.tolist() if current_position is not None else None,
-                    'orientation': current_orientation,
-                    'relative_orientation': relative_orientation
-                })
 
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
@@ -152,14 +145,14 @@ def main():
                 logging.info(f"Images kept in {run_image_dir}")
 
         if save_data:
-            data_path = save_run_data(run_data, run_data_dir)
             user_input_data = input("Do you want to keep the saved run data? (y/n): ").strip().lower()
             if user_input_data == 'n':
                 logging.info("Deleting saved run data...")
-                os.remove(data_path)
+                shutil.rmtree(run_data_dir)
                 logging.info("Run data deleted.")
             else:
-                logging.info(f"Run data kept in {data_path}")
+                logging.info(f"Run data kept in {run_data_dir}")
+            
 
 if __name__ == "__main__":
     main()
