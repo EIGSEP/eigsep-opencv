@@ -8,14 +8,22 @@ class BoxPosition:
             'left': {'top_left': 4, 'top_right': 5, 'bottom_left': 6, 'bottom_right': 7},
         }
         self.tag_relationships = {
-            2: 25,  # Bottom left of the right face borders the top left of the bottom face
-            3: 24,  # Bottom right of the right face borders the top right of the bottom face
-            23: 4,  # Bottom left of the bottom face borders the top left of the left face
-            22: 5,  # Bottom right of the bottom face borders the top right of the left face
-            0: 6,   # Top left of the right face is directly across from tag 6 on the left face
-            1: 7,   # Top right of the right face is directly across from tag 7 on the left face
-            2: 4,   # Bottom right of the right face is directly across from tag 4 on the left face
-            3: 5    # Bottom left of the right face is directly across from tag 5 on the left face
+            2: (25, 90),  # Bottom left of the right face borders the top left of the bottom face
+            25: (2, 90),  # Top left of the bottom face borders the bottom left of the right face
+            3: (24, 90),  # Bottom right of the right face borders the top right of the bottom face
+            24: (3, 90),  # Top right of the bottom face borders the bottom right of the right face
+            23: (4, 90),  # Bottom left of the bottom face borders the top left of the left face
+            4: (23, 90),  # Top left of the left face borders the bottom left of the bottom face
+            22: (5, 90),  # Bottom right of the bottom face borders the top right of the left face
+            5: (22, 90),  # Top right of the left face borders the bottom right of the bottom face
+            0: (6, 180),  # Top left of the right face is directly across from tag 6 on the left face
+            6: (0, 180),  # Top left of the left face is directly across from tag 0 on the right face
+            1: (7, 180),  # Top right of the right face is directly across from tag 7 on the left face
+            7: (1, 180),  # Top right of the left face is directly across from tag 1 on the right face
+            2: (4, 180),  # Bottom left of the right face is directly across from tag 4 on the left face
+            4: (2, 180),  # Top left of the left face is directly across from tag 2 on the right face
+            3: (5, 180),  # Bottom right of the right face is directly across from tag 5 on the left face
+            5: (3, 180),   # Top right of the left face is directly across from tag 3 on the right face
         }
         self.initial_positions = initial_positions if initial_positions else {}
         self.rotation_order = []
@@ -57,26 +65,47 @@ class BoxPosition:
             else:
                 relative_orientation = orientation_degrees
 
+        # Calculate relative orientation based on detected tags
+        relative_orientation = self.calculate_relative_orientation(positions_orientations)
+
         return avg_position, orientation_degrees, relative_orientation
 
-    def calculate_relative_orientation(self, detections):
+    def calculate_relative_orientation(self, positions_orientations):
         if not self.initial_positions:
             return None
 
-        current_tags = {detection.tag_id for detection in detections}
         initial_tags = set(self.initial_positions.keys())
 
         # If no tags are detected, guess that we are facing the top face
-        if not current_tags:
+        if not positions_orientations:
             return 0  # Assuming 0 degrees for top face
 
-        # Determine relative orientation based on tag relationships
-        for current_tag in current_tags:
-            for initial_tag in initial_tags:
-                if current_tag in self.tag_relationships and initial_tag == self.tag_relationships[current_tag]:
-                    return (self.initial_positions[initial_tag]['orientation'] + 180) % 360
+        relative_orientation = None
 
-        return None
+        # Determine relative orientation based on tag relationships
+        for tag_id, current_position, current_tvec, current_orientation in positions_orientations:
+            if current_position is None:
+                continue
+
+            for initial_tag, (related_tag, angle) in self.tag_relationships.items():
+                if tag_id == initial_tag and related_tag in initial_tags:
+                    initial_position = np.array(self.initial_positions[related_tag]['position'])
+                    current_position = np.array(current_position)
+
+                    # Calculate the angle between the initial and current position
+                    vector_initial = initial_position - np.array([0, 0, 0])
+                    vector_current = current_position - np.array([0, 0, 0])
+                    dot_product = np.dot(vector_initial, vector_current)
+                    magnitude_initial = np.linalg.norm(vector_initial)
+                    magnitude_current = np.linalg.norm(vector_current)
+                    angle_between = np.arccos(dot_product / (magnitude_initial * magnitude_current))
+                    angle_between_degrees = np.degrees(angle_between)
+
+                    # Calculate the relative orientation
+                    relative_orientation = (self.initial_positions[related_tag]['orientation'] + angle + angle_between_degrees) % 360
+                    break
+
+        return relative_orientation
 
     def get_orientation_from_tags(self, detections):
         orientations = [d.orientation for d in detections if d.orientation is not None]
