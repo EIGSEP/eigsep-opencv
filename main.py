@@ -112,7 +112,7 @@ def main():
     display_thread = DisplayThread(camera_thread, live, display_queue)
     display_thread.start()
 
-    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, save, run_image_dir, box_position)
+    detection_thread = DetectionThread(camera_thread, detector, display_queue, print_delay, run_image_dir, box_position)
     detection_thread.start()
 
     run_data = []
