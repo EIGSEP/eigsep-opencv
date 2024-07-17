@@ -58,8 +58,8 @@ def main():
     args = parse_args()
 
     config = load_config(args.config)
-    live = args.live if args.live is not None else config.get("live", False)
-    save = args.save or config.get("save", False)
+    live = True
+    save = True
     save_data = args.data or config.get("save_data", False)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
