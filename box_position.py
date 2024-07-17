@@ -4,16 +4,14 @@ class BoxPosition:
     def __init__(self, initial_positions=None):
         self.face_tags = {
             'right': {'top_left': 0, 'top_right': 1, 'bottom_left': 2, 'bottom_right': 3},
-            'bottom': {'top_left': 6, 'top_right': 7, 'bottom_left': 4, 'bottom_right': 5},
+            'bottom': {'top_left': 25, 'top_right': 24, 'bottom_left': 23, 'bottom_right': 22},
             'left': {'top_left': 8, 'top_right': 9, 'bottom_left': 10, 'bottom_right': 11},
         }
         self.tag_relationships = {
-            3: 6,  # Bottom left of the right face borders the top left of the bottom face
-            2: 7,  # Bottom right of the right face borders the top right of the bottom face
-            5: 9,  # Bottom left of the bottom face borders the top left of the left face
-            4: 8,  # Bottom right of the bottom face borders the top right of the left face
-            0: 10, # Top left of the right face borders the bottom left of the left face
-            1: 11, # Top right of the right face borders the bottom right of the left face
+            2: 25,  # Bottom right of the right face borders the top right of the bottom face
+            3: 24,  # Bottom left of the right face borders the top left of the bottom face
+            23: 4,  # Bottom right of the bottom face borders the top right of the left face
+            22: 5,  # Bottom left of the bottom face borders the top left of the left face
         }
         self.initial_positions = initial_positions if initial_positions else {}
         self.rotation_order = []
