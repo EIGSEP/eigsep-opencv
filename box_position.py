@@ -23,14 +23,13 @@ class BoxPosition:
             2: (4, 180),  # Bottom left of the right face is directly across from tag 4 on the left face
             4: (2, 180),  # Top left of the left face is directly across from tag 2 on the right face
             3: (5, 180),  # Bottom right of the right face is directly across from tag 5 on the left face
-            5: (3, 180),   # Top right of the left face is directly across from tag 3 on the right face
+            5: (3, 180),  # Top right of the left face is directly across from tag 3 on the right face
         }
         self.initial_positions = initial_positions if initial_positions else {}
         self.rotation_order = []
         self.rotation_count = 0
 
     def determine_orientation(self, positions_orientations):
-        print(positions_orientations)
         if len(positions_orientations) == 0:
             return None, None
 
@@ -97,6 +96,26 @@ class BoxPosition:
 
                     # Calculate the relative orientation
                     relative_orientation = (self.initial_positions[related_tag]['orientation'] + angle + angle_between_degrees) % 360
+                    break
+
+        # Handle tags on the same face
+        for face, tags in self.face_tags.items():
+            for tag1, tag2 in zip(tags.values(), tags.values()):
+                if tag1 in initial_tags and tag2 == tag_id:
+                    initial_position = np.array(self.initial_positions[tag1]['position'])
+                    current_position = np.array(current_position)
+
+                    # Calculate the angle between the initial and current position
+                    vector_initial = initial_position - np.array([0, 0, 0])
+                    vector_current = current_position - np.array([0, 0, 0])
+                    dot_product = np.dot(vector_initial, vector_current)
+                    magnitude_initial = np.linalg.norm(vector_initial)
+                    magnitude_current = np.linalg.norm(vector_current)
+                    angle_between = np.arccos(dot_product / (magnitude_initial * magnitude_current))
+                    angle_between_degrees = np.degrees(angle_between)
+
+                    # Calculate the relative orientation
+                    relative_orientation = (self.initial_positions[tag1]['orientation'] + angle_between_degrees) % 360
                     break
 
         return relative_orientation
