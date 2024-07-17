@@ -1,6 +1,6 @@
 import cv2
+import apriltag
 import numpy as np
-import time
 
 class AprilTagDetector:
     def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.0275):
