@@ -6,22 +6,10 @@ class AprilTagDetector:
     def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.080, zoom=1.0):
         self.camera_matrix = camera_matrix
         self.dist_coeffs = dist_coeffs
-        self.tag_size = tag_size  # Tag size should not be scaled by zoom directly
-        self.zoom = zoom
+        self.tag_size = tag_size * zoom  # Adjust the tag size by the zoom factor
         self.detector = apriltag.Detector()
 
-    def apply_digital_zoom(self, frame):
-        if self.zoom == 1.0:
-            return frame
-        height, width = frame.shape[:2]
-        new_height, new_width = int(height / self.zoom), int(width / self.zoom)
-        top, left = (height - new_height) // 2, (width - new_width) // 2
-        cropped_frame = frame[top:top+new_height, left:left+new_width]
-        zoomed_frame = cv2.resize(cropped_frame, (width, height), interpolation=cv2.INTER_LINEAR)
-        return zoomed_frame
-
     def detect(self, frame):
-        frame = self.apply_digital_zoom(frame)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         detections = self.detector.detect(gray)
         return detections, gray
@@ -56,7 +44,6 @@ class AprilTagDetector:
         return positions_orientations
 
     def draw_detections(self, frame, detections):
-        frame = self.apply_digital_zoom(frame)
         for detection in detections:
             corners = detection.corners
             corners = np.int32(corners)
@@ -69,3 +56,4 @@ class AprilTagDetector:
             cv2.putText(frame, tag_id, center, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
         return frame
+    
