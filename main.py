@@ -95,7 +95,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     logging.info("Creating AprilTag detector...")
-    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size, 1)
+    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size, 3)
     box_position = BoxPosition(initial_positions)  # Assuming BoxPosition takes initial_positions as an argument
 
     # Create subdirectories for this run
