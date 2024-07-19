@@ -78,7 +78,7 @@ class DetectionThread(threading.Thread):
         while self.running:
             if self.camera_thread.frame_ready.wait(1):
                 frame = self.camera_thread.frame
-                detections, undistorted_frame = self.detector.detect(frame)
+                detections, zoomed_frame = self.detector.detect(frame)
                 positions_orientations = self.detector.get_position_and_orientation(detections)
                 current_position, current_orientation, relative_orientation = self.box_position.calculate_orientation(positions_orientations)
 
@@ -98,7 +98,7 @@ class DetectionThread(threading.Thread):
                     else:
                         logging.info(f"Current box position: N/A, Old Orientation: N/A, Relative Orientation: N/A")
                     logging.info(f"Rotation count: {self.box_position.rotation_count}")
-                    frame_with_detections = self.detector.draw_detections(undistorted_frame, detections)
+                    frame_with_detections = self.detector.draw_detections(zoomed_frame, detections)
                     self.display_queue.put(frame_with_detections)
 
                     if self.save:
