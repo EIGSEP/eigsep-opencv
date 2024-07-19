@@ -3,7 +3,7 @@ import apriltag
 import numpy as np
 
 class AprilTagDetector:
-    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.080, zoom=3.0):
+    def __init__(self, camera_matrix=None, dist_coeffs=None, tag_size=0.080, zoom=1.0):
         self.camera_matrix = camera_matrix
         self.dist_coeffs = dist_coeffs
         self.tag_size = tag_size
@@ -12,31 +12,33 @@ class AprilTagDetector:
         
         if self.camera_matrix is not None:
             # Adjust camera matrix for zoom
+            self.camera_matrix = self.camera_matrix.copy()
             self.camera_matrix[0, 0] *= zoom
             self.camera_matrix[1, 1] *= zoom
 
-    def detect(self, frame):
+    def apply_digital_zoom(self, frame):
         if self.zoom != 1.0:
-            # Calculate new dimensions
             height, width = frame.shape[:2]
             new_width = int(width / self.zoom)
             new_height = int(height / self.zoom)
             
             # Calculate cropping box
-            x1 = int((width - new_width) / 2)
-            y1 = int((height - new_height) / 2)
+            x1 = (width - new_width) // 2
+            y1 = (height - new_height) // 2
             x2 = x1 + new_width
             y2 = y1 + new_height
             
             # Crop and resize the frame
             cropped_frame = frame[y1:y2, x1:x2]
-            resized_frame = cv2.resize(cropped_frame, (width, height))
-        else:
-            resized_frame = frame
-        
-        gray = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
+            zoomed_frame = cv2.resize(cropped_frame, (width, height), interpolation=cv2.INTER_LINEAR)
+            return zoomed_frame
+        return frame
+
+    def detect(self, frame):
+        frame = self.apply_digital_zoom(frame)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         detections = self.detector.detect(gray)
-        return detections, resized_frame
+        return detections, frame
 
     def get_position_and_orientation(self, detections):
         positions_orientations = []
