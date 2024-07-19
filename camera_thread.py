@@ -28,9 +28,10 @@ class CameraThread(threading.Thread):
         self.cap.release()
 
 class DisplayThread(threading.Thread):
-    def __init__(self, camera_thread, live, display_queue):
+    def __init__(self, camera_thread, detector, live, display_queue):
         threading.Thread.__init__(self)
         self.camera_thread = camera_thread
+        self.detector = detector
         self.live = live
         self.running = True
         self.display_queue = display_queue
@@ -40,7 +41,8 @@ class DisplayThread(threading.Thread):
             if self.camera_thread.frame_ready.wait(1):
                 frame = self.camera_thread.frame
                 if self.live:
-                    cv2.imshow('AprilTag Detection', frame)
+                    zoomed_frame = self.detector.apply_digital_zoom(frame)  # Apply zoom to the frame
+                    cv2.imshow('AprilTag Detection', zoomed_frame)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         self.running = False
                         break
