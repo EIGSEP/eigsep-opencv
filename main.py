@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument("-cal", "--calibration", type=str, default="camera_calibration_data.npz", help="Path to camera calibration data")
     parser.add_argument("-con", "--config", type=str, default="config.json", help="Path to configuration file")
     parser.add_argument("-ip", "--initial_position", type=str, default="initial_camera_position.json", help="Path to initial camera position data")
+    parser.add_argument("-z", "--zoom", action="store_true", type=float, default=1.0, help="digital zoom")
     return parser.parse_args()
 
 def load_config(config_path):
@@ -61,6 +62,7 @@ def main():
     live = args.live if args.live is not None else config.get("live", False)
     save = False
     save_data = True
+    zoom = args.zoom if args.zoom is not None else config.get("zoom", 1.0)
     calibration_path = args.calibration or config.get("calibration", "camera_calibration_data.npz")
     initial_position_path = args.initial_position or config.get("initial_position", "initial_camera_position.json")
     tag_size = config.get("tag_size", 0.080)  # Default tag size to 0.1 meters if not in config
@@ -95,7 +97,7 @@ def main():
     camera_thread.frame_ready.wait()
 
     logging.info("Creating AprilTag detector...")
-    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size, 5)
+    detector = AprilTagDetector(camera_matrix, dist_coeffs, tag_size, zoom)
     box_position = BoxPosition(initial_positions)  # Assuming BoxPosition takes initial_positions as an argument
 
     # Create subdirectories for this run
