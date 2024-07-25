@@ -5,8 +5,10 @@ import argparse
 def create_timelapse(input_dir, output_file, fps):
     # Get list of files in the directory
     files = [f for f in os.listdir(input_dir) if f.endswith('.png')]
-    files.sort()  # Ensure files are in order
-
+    
+    # Sort files by their numerical value in the filename
+    files.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
+    
     if not files:
         print("No PNG files found in the directory.")
         return
@@ -29,13 +31,13 @@ def create_timelapse(input_dir, output_file, fps):
         out.write(img)
 
     out.release()
-    print(f"Timelapse video saved as {output_file}")
+    print("Timelapse video saved as {}".format(output_file))
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Create a timelapse video from PNG images.")
     parser.add_argument('input_dir', type=str, help='Directory containing PNG images.')
     parser.add_argument('output_file', type=str, nargs='?', default=None, help='Output video file path (optional).')
-    parser.add_argument('--fps', type=int, default=60, help='Frames per second for the output video (default: 60).')
+    parser.add_argument('-f', '--fps', type=int, default=60, help='Frames per second for the output video (default: 60).')
     return parser.parse_args()
 
 if __name__ == "__main__":
