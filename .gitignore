@@ -1,1 +1,5 @@
 __pycache__/
+timelapse_output/
+eigsep_deployment_images/
+saved_images/
+saved_data/
